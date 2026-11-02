@@ -45,4 +45,4 @@ def test_report_manifest_records_salt_hash_not_salt(tmp_path: Path) -> None:
     for png in ("success_vs_horizon.png", "tools_ab.png", "failure_onset.png"):
         assert (out / png).stat().st_size > 10_000
     report = (out / "report.md").read_text()
-    assert "| pid | rich | 60 | 2 |" in report and "n/a (scripted)" in report
+    assert "| pid | rich | 60 | 2 |" in report and "n/a (scripted, no model calls)" in report
