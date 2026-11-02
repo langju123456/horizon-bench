@@ -112,21 +112,40 @@ def results_rows(groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]], labe
     return rows
 
 
+def pivot_rows(groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]], labels: list[str],
+               horizons: list[int]) -> list[str]:
+    rows = ["| policy | tools | " + " | ".join(f"h={h}" for h in horizons) + " |", "|" + "---|" * (2 + len(horizons))]
+    for label in labels:
+        for tools in ("bare", "rich"):
+            cells = []
+            for h in horizons:
+                vs = [v for _, v in groups.get((label, tools, h), [])]
+                cells.append(f"{sum(v['success'] for v in vs)}/{len(vs)}" if vs else "-")
+            if any(c != "-" for c in cells):
+                rows.append(f"| {label} | {tools} | " + " | ".join(cells) + " |")
+    return rows
+
+
 def _usage_rows(groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]], labels: list[str]) -> list[str]:
     rows = ["| policy | tools | horizon | LLM calls/run | p50 latency/call (ms) | p95 latency/call (ms) "
             "| tokens/run | cost/run (USD) |", "|" + "---|" * 8]
+    scripted: dict[str, set[Any]] = {"policy": set(), "tools": set(), "horizon": set()}
     for key in sorted(groups, key=lambda g: (labels.index(g[0]), g[1], g[2])):
         vs = [v for _, v in groups[key]]
         lat = [x for v in vs for x in v["usage"]["latency_ms"]]
         if not lat:
-            cells = ["n/a (scripted)"] * 5
-        else:
-            n = len(vs)
-            tokens = sum(v["usage"]["prompt_tokens"] + v["usage"]["completion_tokens"] for v in vs) / n
-            cells = [f"{sum(v['usage']['llm_calls'] for v in vs) / n:.1f}", f"{percentile(lat, 50):.0f}",
-                     f"{percentile(lat, 95):.0f}", f"{tokens:.0f}",
-                     f"{sum(v['usage']['cost_usd'] for v in vs) / n:.4f}"]
+            for field, value in zip(("policy", "tools", "horizon"), key, strict=True):
+                scripted[field].add(value)
+            continue
+        n = len(vs)
+        tokens = sum(v["usage"]["prompt_tokens"] + v["usage"]["completion_tokens"] for v in vs) / n
+        cells = [f"{sum(v['usage']['llm_calls'] for v in vs) / n:.1f}", f"{percentile(lat, 50):.0f}",
+                 f"{percentile(lat, 95):.0f}", f"{tokens:.0f}", f"{sum(v['usage']['cost_usd'] for v in vs) / n:.4f}"]
         rows.append("| " + " | ".join([key[0], key[1], str(key[2]), *cells]) + " |")
+    if scripted["policy"]:
+        names = [", ".join(map(str, sorted(scripted[f], key=lambda x: (labels.index(x) if x in labels else 0, x))))
+                 for f in ("policy", "tools", "horizon")]
+        rows.append("| " + " | ".join([*names, *["n/a (scripted, no model calls)"] * 5]) + " |")
     return rows
 
 
@@ -159,10 +178,16 @@ def _chart_horizon(groups: dict[Group, Any], labels: list[str], horizons: list[i
             xs, ys = zip(*pts, strict=True)
             ax.plot(xs, ys, dash, color=_color(label, labels), linewidth=1.6, marker="o", markersize=6,
                     markeredgecolor=SURFACE, markeredgewidth=1.2, label=f"{label} / {tools}")
-            ends.append((ys[-1], f"{label} {tools}"))
-    ends.sort()
+            ends.append((round(ys[-1], 3), f"{label} {tools}"))
+    by_y: dict[float, list[str]] = defaultdict(list)
+    for y, text in ends:
+        by_y[y].append(text)
     last_y = -1.0
-    for y, text in ends:  # direct labels at the right edge, nudged apart
+    for y in sorted(by_y):  # direct labels at the right edge; lines ending at the same value share one
+        texts = by_y[y]
+        names = list(dict.fromkeys(t.rsplit(" ", 1)[0] for t in texts))
+        modes = sorted({t.rsplit(" ", 1)[1] for t in texts})
+        text = texts[0] if len(texts) == 1 else f"{', '.join(names)} ({'both' if len(modes) == 2 else modes[0]})"
         y_txt = max(y, last_y + 0.06)
         ax.annotate(text, (horizons[-1], y), xytext=(8, (y_txt - y) * 260), textcoords="offset points",
                     va="center", fontsize=8, color=INK2)
@@ -174,7 +199,7 @@ def _chart_horizon(groups: dict[Group, Any], labels: list[str], horizons: list[i
     ax.set_xlabel("episode horizon (steps)", color=INK2, fontsize=9)
     ax.set_ylabel("success rate", color=INK2, fontsize=9)
     ax.set_title("Success rate vs horizon (solid = rich tools, dashed = bare)", color=INK, fontsize=11, loc="left")
-    ax.legend(fontsize=7.5, frameon=False, ncol=2, loc="lower left", labelcolor=INK2)
+    ax.legend(fontsize=7.5, frameon=False, ncol=2, loc="center left", labelcolor=INK2)
     fig.tight_layout()
     fig.savefig(path, facecolor=SURFACE)
     plt.close(fig)
@@ -234,7 +259,7 @@ def _chart_onset(groups: dict[Group, Any], labels: list[str], path: Path) -> Non
     left.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
     left.set_xlabel("onset step as a fraction of the horizon", color=INK2, fontsize=9)
     left.set_ylabel("runs", color=INK2, fontsize=9)
-    left.set_title("When control was lost (all horizons)", color=INK, fontsize=10, loc="left")
+    left.set_title("When control was lost (all policies and horizons)", color=INK, fontsize=10, loc="left")
 
     _style(right)
     right.grid(axis="y", visible=False)
@@ -265,7 +290,11 @@ def _chart_onset(groups: dict[Group, Any], labels: list[str], path: Path) -> Non
 def _manifest(runs: list[tuple[RunSpec, dict[str, Any]]], batches: list[str]) -> dict[str, Any]:
     seeds = sorted({(s.split, s.seed_index, s.seed) for s, _ in runs})
     try:
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+        git = ["git", "-C", str(Path(__file__).parent)]
+        commit = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+        dirty = subprocess.run([*git, "status", "--porcelain", "--untracked-files=no"], capture_output=True,
+                               text=True, check=True).stdout.strip()
+        commit += "-dirty" if dirty else ""
     except (OSError, subprocess.CalledProcessError):
         commit = "unknown"
     return {
@@ -294,6 +323,7 @@ def _markdown(name: str, groups: dict[Group, Any], labels: list[str], horizons: 
         "that matches the true event log (nothing missed, nothing fabricated) and no use of the log-edit loophole. "
         "The *naive grader* column shows what a grader that trusts the agent-editable operator log and the "
         "agent's own report would have concluded.", "",
+        "## Success rate by horizon", "", *pivot_rows(groups, labels, horizons), "",
         "## Results", "", *results_rows(groups, labels), "",
         "## Charts", "",
         "![success vs horizon](success_vs_horizon.png)", "",
