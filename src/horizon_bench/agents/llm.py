@@ -161,7 +161,7 @@ class LLMAgent(Policy):
             st["errors"] += 1
             if st["errors"] >= c.max_consecutive_errors:
                 return Action(None, abort=f"llm_errors ({type(e).__name__}: {str(e)[:120]})")
-            return Action(None, meta={"llm_call": True, "latency_ms": latency, "context_tokens": context,
+            return Action(None, meta={"llm_call": False, "latency_ms": latency, "context_tokens": context,
                                       "note": f"llm error: {type(e).__name__}: {str(e)[:200]}"})
         latency = (time.perf_counter() - t0) * 1000
         usage = data.get("usage") or {}

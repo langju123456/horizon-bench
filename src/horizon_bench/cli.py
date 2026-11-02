@@ -59,7 +59,8 @@ def cmd_run(args: argparse.Namespace) -> int:
                     lost = v["onset_step"] is not None
                     onset = f"onset {v['onset_cause']}@{v['onset_step']}" if lost else "in control"
                     status = "ok  " if v["success"] else "FAIL"
-                    print(f"{status} {spec.run_id}  {onset}  failed={','.join(v['failed']) or '-'}", flush=True)
+                    failed = ",".join(v["failed"]) or "-"
+                    print(f"{status} {spec.run_id}  end={v['end_reason']}  {onset}  failed={failed}", flush=True)
     if total:
         print(f"{successes}/{total} runs succeeded")
     return 0
