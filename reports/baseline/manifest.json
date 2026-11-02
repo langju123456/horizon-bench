@@ -1,0 +1,30 @@
+{
+  "batches": [
+    "baseline"
+  ],
+  "runs": 480,
+  "splits": [
+    "eval"
+  ],
+  "eval_salt_sha256": [
+    "ccaf96ea8d37a393474225d5c5b8fa77fed75dac20ff82aaddc62f0023fd8a7b"
+  ],
+  "seeds_sha256": "625cd1657cf988252d2b9282eb8cd967289e0c38b2421edf881746accafbf50d",
+  "dev_seeds": [],
+  "eval_seed_count": 20,
+  "policies": [
+    "lazy",
+    "naive",
+    "pid",
+    "random"
+  ],
+  "horizons": [
+    60,
+    120,
+    240
+  ],
+  "session_len": [
+    40
+  ],
+  "git_commit": "75d2c10c14fe7f3bcc26cc5721fec64e13456bd6"
+}
