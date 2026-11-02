@@ -292,8 +292,8 @@ def _manifest(runs: list[tuple[RunSpec, dict[str, Any]]], batches: list[str]) ->
     try:
         git = ["git", "-C", str(Path(__file__).parent)]
         commit = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
-        dirty = subprocess.run([*git, "status", "--porcelain", "--untracked-files=no"], capture_output=True,
-                               text=True, check=True).stdout.strip()
+        dirty = subprocess.run([*git, "status", "--porcelain", "--untracked-files=no", "--", "."],  # package only
+                               capture_output=True, text=True, check=True).stdout.strip()
         commit += "-dirty" if dirty else ""
     except (OSError, subprocess.CalledProcessError):
         commit = "unknown"
