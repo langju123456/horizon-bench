@@ -15,6 +15,7 @@ import numpy as np
 BLOCK = 60
 REPORTABLE = ("feed_change", "sensor_drift", "sensor_dropout", "valve_stuck")
 EQUIPMENT_CODES = ("AGITATOR_VIBRATION", "SEAL_PRESSURE_LOW", "COOLANT_PUMP_TEMP")
+PERSISTENT = 1_000_000  # a feed composition change stays in effect until the next one
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,7 @@ def make_scenario(seed: int, horizon: int) -> list[Disturbance]:
 
         sign = float(rng.choice([-1.0, 1.0]))
         events.append(
-            Disturbance("feed_change", when(), horizon, round(1.0 + sign * rng.uniform(0.10, 0.18), 3))
+            Disturbance("feed_change", when(), PERSISTENT, round(1.0 + sign * rng.uniform(0.10, 0.18), 3))
         )
         events.append(Disturbance("sensor_dropout", when(), int(rng.integers(6, 13))))
         if rng.random() < 0.5:
