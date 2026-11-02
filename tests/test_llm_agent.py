@@ -172,6 +172,7 @@ def test_http_errors_do_not_crash_the_run() -> None:
     agent = LLMAgent(spec, get_family("reactor"), transport=httpx.MockTransport(lambda r: httpx.Response(500)))
     v, _ = run(spec, agent)
     assert v["end_reason"].startswith("abort:llm_errors") and v["agent_steps"] == 3
+    assert v["usage"]["llm_errors"] == 2 and v["usage"]["llm_calls"] == 0
 
 
 def test_parse_arguments() -> None:

@@ -49,7 +49,8 @@ def summarize_usage(records: list[dict[str, Any]]) -> dict[str, Any]:
     calls = [r for r in records if r.get("llm_call")]
     lat = [float(r["llm_latency_ms"]) for r in calls]
     return {
-        "llm_calls": len(calls),
+        "llm_calls": len(calls),  # successful calls; failed attempts are counted separately
+        "llm_errors": sum(1 for r in records if str(r.get("note") or "").startswith("llm error")),
         "prompt_tokens": sum(int(r["prompt_tokens"]) for r in records),
         "completion_tokens": sum(int(r["completion_tokens"]) for r in records),
         "cost_usd": round(sum(float(r["cost_usd"]) for r in records), 6),
