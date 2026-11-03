@@ -28,14 +28,15 @@ LOG="$LOG_DIR/mac_run.log"
 
 launch() {
   mkdir -p "$LOG_DIR" "$(dirname "$DIR")"
+  # Running the one-liner again restarts on the latest code; interrupted runs resume from their checkpoints.
+  if pgrep -f "mac_llm_run.sh --pipeline" >/dev/null 2>&1; then
+    echo "stopping the previous run to restart it on the latest code"
+    pkill -f "mac_llm_run.sh --pipeline"; pkill -f "\.venv/bin/hb run"; sleep 2
+  fi
   if [ -d "$DIR/.git" ]; then
-    git -C "$DIR" pull --ff-only -q || { echo "git pull failed in $DIR"; exit 1; }
+    git -C "$DIR" pull --rebase -q || { echo "git pull failed in $DIR"; exit 1; }
   else
     git clone -q "$REPO_URL" "$DIR" || { echo "git clone failed"; exit 1; }
-  fi
-  if [ -f "$LOG_DIR/pid" ] && kill -0 "$(cat "$LOG_DIR/pid")" 2>/dev/null; then
-    echo "already running (pid $(cat "$LOG_DIR/pid")); log: $LOG"
-    exit 0
   fi
   nohup caffeinate -ims /bin/bash "$DIR/scripts/mac_llm_run.sh" --pipeline >>"$LOG" 2>&1 &
   echo $! >"$LOG_DIR/pid"
@@ -172,7 +173,7 @@ pipeline() {
   # Preflight: one chat call straight to Ollama, so a failure shows Ollama's own answer in the log.
   local pre
   pre="$(curl -sS --noproxy '*' -m 600 "$OLLAMA_URL/v1/chat/completions" -H 'Content-Type: application/json' \
-        -d "{\"model\": \"$HBM\", \"messages\": [{\"role\": \"user\", \"content\": \"Reply with OK. /no_think\"}], \"max_tokens\": 20}" 2>&1)"
+        -d "{\"model\": \"$HBM\", \"messages\": [{\"role\": \"user\", \"content\": \"Reply with OK.\"}], \"max_tokens\": 20, \"reasoning_effort\": \"none\"}" 2>&1)"
   echo "preflight: $(echo "$pre" | head -c 400)"
   case "$pre" in *'"choices"'*) ;; *) fail "Ollama preflight call failed: $(echo "$pre" | head -c 200)" ;; esac
 
@@ -182,6 +183,22 @@ pipeline() {
         --seeds 1 --split dev --name "smoke-$BATCH" --overwrite $THINK_FLAG 2>&1)" || fail "LLM smoke run"
   echo "$smoke_out"
   case "$smoke_out" in *abort:llm_errors*) fail "LLM smoke: the model calls failed (see log)" ;; esac
+  # Guard against a run that would take days: thinking that was not switched off shows as long completions.
+  local speed
+  speed="$(.venv/bin/python - "runs/smoke-$BATCH-llm-rich-h60-dev000/trace.jsonl" <<'PY'
+import json, statistics, sys
+rows = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+calls = [r for r in rows if r.get("llm_call")]
+toks = [r.get("completion_tokens") or 0 for r in calls]
+lat = [(r.get("llm_latency_ms") or 0) / 1000 for r in calls]
+print(f"{len(calls)} {statistics.median(toks) if toks else 0:.0f} {statistics.median(lat) if lat else 0:.1f}")
+PY
+)"
+  log "smoke: model calls, median completion tokens, median seconds per call = $speed"
+  set -- $speed
+  if [ -z "${HB_THINK:-}" ] && [ "${2:-0}" -gt 400 ]; then
+    fail "thinking still on (median $2 completion tokens, $3 s per call); the full run would take days"
+  fi
   PHASES_DONE="baseline, smoke"
 
   local seeds="${HB_SEEDS:-10}"

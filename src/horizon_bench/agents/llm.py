@@ -39,7 +39,7 @@ class LLMConfig:
     temperature: float = 0.0
     timeout_s: float = 300.0
     max_consecutive_errors: int = 3
-    no_think: bool = False  # Qwen3 soft switch: append /no_think to the system prompt and each session intro
+    no_think: bool = False  # thinking off: reasoning_effort none, plus Qwen3's /no_think text switch
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -162,6 +162,9 @@ class LLMAgent(Policy):
         context = self._context_tokens()
         payload = {"model": c.model, "messages": st["messages"], "tools": self.tools, "tool_choice": "auto",
                    "max_tokens": c.max_tokens_per_call, "temperature": c.temperature}
+        if c.no_think:
+            # Recent Ollama ignores the /no_think text switch; reasoning_effort "none" is its documented off switch.
+            payload["reasoning_effort"] = "none"
         t0 = time.perf_counter()
         try:
             resp = self.client.post("/chat/completions", json=payload)

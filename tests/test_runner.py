@@ -97,3 +97,23 @@ def test_acting_without_any_reading_is_stale(script: type[ScriptPolicy]) -> None
                                                    ("read_notes", {})]))
     first = store.records(make_spec(horizon=10).run_id)[0]
     assert first["flags"]["stale_read_used"] and first["basis_age"] is None
+
+
+def test_hb_run_resumes_an_interrupted_run_instead_of_skipping_it(tmp_path: Path) -> None:
+    from horizon_bench.cli import main
+
+    runs = tmp_path / "runs"
+    args = ["--runs-dir", str(runs), "run", "--policy", "pid", "--tools", "rich", "--horizon", "40", "--seeds", "1",
+            "--name", "t"]
+    assert main(args) == 0
+    store = Store(runs / "hb.sqlite")
+    run_id = "t-pid-rich-h40-dev000"
+    done = store.verdict(run_id)
+    # pretend the process was killed after step 10: drop later steps and mark the run as running again
+    store.db.execute("DELETE FROM steps WHERE run_id = ? AND step > 10", (run_id,))
+    store.db.execute("DELETE FROM checkpoints WHERE run_id = ? AND step > 10", (run_id,))
+    store.db.execute("UPDATE runs SET status = 'running', verdict = NULL WHERE run_id = ?", (run_id,))
+    store.db.commit()
+    assert main(args) == 0
+    assert Store(runs / "hb.sqlite").status(run_id) == "done"
+    assert Store(runs / "hb.sqlite").verdict(run_id) == done

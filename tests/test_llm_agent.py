@@ -190,9 +190,11 @@ def test_no_think_switch_reaches_system_prompt_and_session_intro() -> None:
     first = server.requests[0]["messages"]
     assert first[0]["role"] == "system" and first[0]["content"].endswith("/no_think")
     assert first[1]["role"] == "user" and first[1]["content"].endswith("/no_think")
+    assert server.requests[0]["reasoning_effort"] == "none"
 
     _, _, plain = llm_run(reply, horizon=10)
     assert "/no_think" not in json.dumps(plain.requests[0]["messages"])
+    assert "reasoning_effort" not in plain.requests[0]
 
 
 def test_local_endpoints_bypass_proxy_settings(monkeypatch: pytest.MonkeyPatch) -> None:
