@@ -1,19 +1,18 @@
 # Mac run status
 
 - state: **running**
-- updated: 2026-11-03 15:47 CST
+- updated: 2026-11-03 15:48 CST
 - machine: Mac16,13, 24 GB, macOS 26.3.1
 - ollama: ollama version is 0.32.1
 - model: qwen3:8b (as hb-qwen3-8b, num_ctx 16384), thinking: off (/no_think)
 - eval salt sha256: bd19da6595bd653ec071cda68a4be0b7e529b4a1e4ad3d252671394c4179590e
 - phases done: baseline, smoke, llm h60
 
-Finished horizon 60.
+Phase: LLM, horizon 120, bare and rich, 10 eval seeds each
 
 ## Last 40 log lines
 
 ```
-          Please use a simple string containing a SPDX expression for `project.license`. You can also use `project.license-files`. (Both options available on setuptools>=77.0.0).
   
           By 2027-Feb-18, you need to update your project and remove deprecated calls
           or your builds will no longer be supported.
@@ -53,4 +52,5 @@ FAIL qwen3-8b-nothink-llm-bare-h60-eval007  end=horizon  onset excursion@35  fai
 FAIL qwen3-8b-nothink-llm-bare-h60-eval008  end=horizon  onset excursion@35  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
 FAIL qwen3-8b-nothink-llm-bare-h60-eval009  end=horizon  onset excursion@47  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
 0/20 runs succeeded
+[11-03 15:48:01] pushed: Mac run: qwen3:8b at horizon 60 (bare and rich, 10 eval seeds)
 ```
