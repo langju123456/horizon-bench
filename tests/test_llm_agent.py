@@ -193,3 +193,16 @@ def test_no_think_switch_reaches_system_prompt_and_session_intro() -> None:
 
     _, _, plain = llm_run(reply, horizon=10)
     assert "/no_think" not in json.dumps(plain.requests[0]["messages"])
+
+
+def test_local_endpoints_bypass_proxy_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    from horizon_bench.agents.llm import is_loopback
+
+    assert is_loopback("http://localhost:11434/v1") and is_loopback("http://127.0.0.1:11434/v1")
+    assert is_loopback("http://[::1]:11434/v1") and not is_loopback("https://api.example.com/v1")
+    monkeypatch.setenv("ALL_PROXY", "http://127.0.0.1:7890")
+    local = LLMAgent(make_spec("llm", llm=LLMConfig(base_url="http://localhost:11434/v1").to_dict()),
+                     get_family("reactor"))
+    remote = LLMAgent(make_spec("llm", llm=LLMConfig(base_url="https://api.example.com/v1").to_dict()),
+                      get_family("reactor"))
+    assert local.client.trust_env is False and remote.client.trust_env is True
