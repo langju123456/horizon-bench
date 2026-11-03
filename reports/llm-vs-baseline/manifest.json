@@ -3,7 +3,7 @@
     "mac-baseline",
     "qwen3-8b-nothink"
   ],
-  "runs": 500,
+  "runs": 520,
   "splits": [
     "eval"
   ],
@@ -28,5 +28,5 @@
   "session_len": [
     40
   ],
-  "git_commit": "7bf0048d4fbddd36a28f8547f41548d18fe8d530"
+  "git_commit": "00b18190d89179a603073a400bc5588f220fc7c1"
 }
