@@ -180,3 +180,16 @@ def test_parse_arguments() -> None:
     assert parse_arguments("") == ({}, None)
     assert parse_arguments("[1, 2]")[1] == "malformed tool call: arguments must be a JSON object"
     assert parse_arguments("{oops")[1].startswith("malformed tool call: arguments are not valid JSON")
+
+
+def test_no_think_switch_reaches_system_prompt_and_session_intro() -> None:
+    def reply(body: dict[str, Any], n: int) -> dict[str, Any]:
+        return completion(call("finish", FINISH))
+
+    _, _, server = llm_run(reply, horizon=10, no_think=True)
+    first = server.requests[0]["messages"]
+    assert first[0]["role"] == "system" and first[0]["content"].endswith("/no_think")
+    assert first[1]["role"] == "user" and first[1]["content"].endswith("/no_think")
+
+    _, _, plain = llm_run(reply, horizon=10)
+    assert "/no_think" not in json.dumps(plain.requests[0]["messages"])

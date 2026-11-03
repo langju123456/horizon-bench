@@ -7,7 +7,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from horizon_bench.agents.llm import LLMConfig
 from horizon_bench.report import build_report
@@ -19,6 +19,14 @@ from horizon_bench.telemetry import load_prices
 
 def _csv(text: str) -> list[str]:
     return [x.strip() for x in text.split(",") if x.strip()]
+
+
+def _tool_mode(text: str) -> Literal["bare", "rich"]:
+    if text == "bare":
+        return "bare"
+    if text == "rich":
+        return "rich"
+    raise SystemExit(f"--tools must be bare or rich, got {text!r}")
 
 
 def _store(args: argparse.Namespace) -> Store:
@@ -39,7 +47,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         llm = LLMConfig(base_url=args.base_url, model=args.model, max_steps=args.max_steps,
                         max_tokens_per_call=args.max_tokens_per_call, max_total_tokens=args.max_total_tokens,
                         wall_time_s=args.wall_time, context_budget_tokens=args.context_budget,
-                        temperature=args.temperature).to_dict()
+                        temperature=args.temperature, no_think=args.no_think).to_dict()
     prices = load_prices(args.prices)
     successes = total = 0
     for policy in _csv(args.policy):
@@ -48,7 +56,8 @@ def cmd_run(args: argparse.Namespace) -> int:
                 for i, seed in enumerate(seeds):
                     spec = RunSpec(
                         run_id=make_run_id(args.name, policy, tools, horizon, args.split, i), batch=args.name,
-                        family=args.family, policy=policy, tools=tools, horizon=horizon, session_len=args.session_len,
+                        family=args.family, policy=policy, tools=_tool_mode(tools), horizon=horizon,
+                        session_len=args.session_len,
                         seed=seed, split=args.split, seed_index=i, salt_sha256=salt_hash(salt) if salt else None,
                         llm=llm if policy == "llm" else None, prices=prices)
                     if store.status(spec.run_id) is not None and not args.overwrite:
@@ -124,6 +133,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--wall-time", type=float, default=d.wall_time_s, help="seconds of model time per run")
     r.add_argument("--context-budget", type=int, default=d.context_budget_tokens)
     r.add_argument("--temperature", type=float, default=d.temperature)
+    r.add_argument("--no-think", action="store_true",
+                   help="Qwen3 only: add the /no_think switch (recorded in the run spec)")
     r.add_argument("--prices", default=None, help='JSON {"model": [usd_per_1M_in, usd_per_1M_out]}')
     r.set_defaults(fn=cmd_run)
 
