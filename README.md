@@ -110,6 +110,17 @@ session, tool, arguments, the result exactly as the agent saw it, flags (`loop`,
 
 ## Running an LLM on a Mac with Ollama
 
+One command does all of the steps below unattended (installs what is missing, runs the scripted baseline on the
+Mac's own eval salt, smoke-tests, runs the LLM at horizons 60 and 120 with bare and rich tools, and commits and
+pushes `reports/` after every phase, with progress in `reports/mac-run/STATUS.md`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/langju123456/horizon-bench/main/scripts/mac_llm_run.sh | bash
+```
+
+It uses `qwen3:8b` (or `qwen3:4b` below 16 GB of memory) with Qwen3's `/no_think` switch (`hb run --no-think`, recorded
+in the run spec); set `HB_THINK=1` to keep thinking on, `HB_MODEL` to pick another model. The manual steps:
+
 ```bash
 ollama pull qwen3:8b
 # Give the server a context window larger than the bench's context budget (default 8000 estimated tokens),
@@ -213,6 +224,15 @@ The environment was frozen before the eval run.
 Nothing in this README comes from a language model. To produce LLM results, run `hb run --policy llm ...` (see
 [the Ollama section](#running-an-llm-on-a-mac-with-ollama)) and then `hb report --name <name> --batch baseline
 --batch <llm batch>`; the report adds the LLM rows, failure-onset contexts and the latency/token/cost table.
+
+## Relation to EvidenceLoop
+
+[EvidenceLoop](https://github.com/langju123456/evidenceloop) applies the same evaluation rules to a different axis:
+short, static data-analysis tasks with a fixed answer, where the verdict feeds a post-training experiment (which
+failures are worth training on). horizon-bench asks where and why an agent loses control as the task gets longer,
+in a plant that keeps changing. Two lessons from EvidenceLoop shaped this design from the start: a verifier that
+checked only the requested numbers was fooled by invented extra numbers, so here the verifier reads only the true
+state and the true event log; and failures are attributed to the earliest point that was not recovered.
 
 ## Limitations
 

@@ -38,6 +38,7 @@ class LLMConfig:
     temperature: float = 0.0
     timeout_s: float = 300.0
     max_consecutive_errors: int = 3
+    no_think: bool = False  # Qwen3 soft switch: append /no_think to the system prompt and each session intro
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -57,6 +58,8 @@ class LLMAgent(Policy):
         self.spec = spec
         self.system = family.system_prompt(spec) + (
             "\nEach tool result is JSON {\"step\": <step the call ran at>, \"result\": ...}.")
+        if self.cfg.no_think:
+            self.system += "\n/no_think"
         self.tools = family.toolbox.specs()
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         self.client = httpx.Client(base_url=self.cfg.base_url, headers=headers, timeout=self.cfg.timeout_s,
@@ -76,6 +79,8 @@ class LLMAgent(Policy):
         intro = f"Session {session + 1} of {n} starts at step {step}. "
         intro += ("Your earlier conversation was erased; call read_notes() to recover your handoff notes."
                   if session else "The shift begins now.")
+        if self.cfg.no_think:
+            intro += " /no_think"
         self.st["messages"] = [{"role": "system", "content": self.system}, {"role": "user", "content": intro}]
 
     # ---- one step ---------------------------------------------------------------------------
