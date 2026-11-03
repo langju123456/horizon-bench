@@ -16,6 +16,10 @@
 # Written for the stock macOS bash 3.2.
 
 set -uo pipefail
+# Local calls must not go through a desktop proxy (Clash and the like answer localhost with 502).
+export NO_PROXY="localhost,127.0.0.1,::1${NO_PROXY:+,$NO_PROXY}"
+export no_proxy="$NO_PROXY"
+OLLAMA_URL="http://127.0.0.1:11434"
 
 REPO_URL="https://github.com/langju123456/horizon-bench.git"
 DIR="${HB_DIR:-$HOME/code/horizon-bench}"
@@ -128,12 +132,12 @@ pipeline() {
   OLLAMA="$(find_ollama || true)"
   if [ -z "$OLLAMA" ] && [ -n "$BREW" ]; then log "installing ollama with Homebrew"; "$BREW" install -q ollama; OLLAMA="$(find_ollama || true)"; fi
   [ -n "$OLLAMA" ] || fail "ollama not found (install it from ollama.com)"
-  if ! curl -sf http://127.0.0.1:11434/api/tags >/dev/null; then
+  if ! curl -sf --noproxy '*' $OLLAMA_URL/api/tags >/dev/null; then
     log "starting ollama serve"
     nohup "$OLLAMA" serve >>"$LOG_DIR/ollama.log" 2>&1 &
-    for _ in $(seq 1 60); do curl -sf http://127.0.0.1:11434/api/tags >/dev/null && break; sleep 1; done
+    for _ in $(seq 1 60); do curl -sf --noproxy '*' $OLLAMA_URL/api/tags >/dev/null && break; sleep 1; done
   fi
-  curl -sf http://127.0.0.1:11434/api/tags >/dev/null || fail "ollama server did not come up"
+  curl -sf --noproxy '*' $OLLAMA_URL/api/tags >/dev/null || fail "ollama server did not come up"
 
   local mem_gb
   mem_gb=$(($(sysctl -n hw.memsize) / 1073741824))
@@ -165,10 +169,17 @@ pipeline() {
   status_file "running" "Phase: LLM smoke test"
   publish "Mac run: scripted baseline on this Mac's eval salt"
 
+  # Preflight: one chat call straight to Ollama, so a failure shows Ollama's own answer in the log.
+  local pre
+  pre="$(curl -sS --noproxy '*' -m 600 "$OLLAMA_URL/v1/chat/completions" -H 'Content-Type: application/json' \
+        -d "{\"model\": \"$HBM\", \"messages\": [{\"role\": \"user\", \"content\": \"Reply with OK. /no_think\"}], \"max_tokens\": 20}" 2>&1)"
+  echo "preflight: $(echo "$pre" | head -c 400)"
+  case "$pre" in *'"choices"'*) ;; *) fail "Ollama preflight call failed: $(echo "$pre" | head -c 200)" ;; esac
+
   # Smoke: one public dev seed, 60 steps.
   local smoke_out
-  smoke_out="$("$HB" run --policy llm --model "$HBM" --tools rich --horizon 60 --seeds 1 --split dev \
-        --name "smoke-$BATCH" $THINK_FLAG 2>&1)" || fail "LLM smoke run"
+  smoke_out="$("$HB" run --policy llm --model "$HBM" --base-url "$OLLAMA_URL/v1" --tools rich --horizon 60 \
+        --seeds 1 --split dev --name "smoke-$BATCH" --overwrite $THINK_FLAG 2>&1)" || fail "LLM smoke run"
   echo "$smoke_out"
   case "$smoke_out" in *abort:llm_errors*) fail "LLM smoke: the model calls failed (see log)" ;; esac
   PHASES_DONE="baseline, smoke"
@@ -178,7 +189,8 @@ pipeline() {
     status_file "running" "Phase: LLM, horizon $h, bare and rich, $seeds eval seeds each"
     publish "Mac run: status"
     log "LLM phase: horizon $h"
-    "$HB" run --policy llm --model "$HBM" --tools rich,bare --horizon "$h" --seeds "$seeds" --split eval \
+    "$HB" run --policy llm --model "$HBM" --base-url "$OLLAMA_URL/v1" --tools rich,bare --horizon "$h" \
+          --seeds "$seeds" --split eval \
           --name "$BATCH" $THINK_FLAG || fail "LLM run at horizon $h"
     "$HB" report --name llm-vs-baseline --batch mac-baseline --batch "$BATCH" >/dev/null || fail "report after horizon $h"
     PHASES_DONE="$PHASES_DONE, llm h$h"

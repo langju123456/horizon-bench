@@ -15,6 +15,7 @@ import re
 import time
 from dataclasses import asdict, dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -44,6 +45,11 @@ class LLMConfig:
         return asdict(self)
 
 
+def is_loopback(url: str) -> bool:
+    host = (urlsplit(url).hostname or "").lower()
+    return host in ("localhost", "::1") or host.endswith(".localhost") or host.startswith("127.")
+
+
 def _fresh_state() -> dict[str, Any]:
     return {"messages": [], "queue": [], "pending": None, "nudge": False, "tokens": 0, "calls": 0,
             "actions": 0, "wall_s": 0.0, "errors": 0, "summaries": 0}
@@ -62,8 +68,10 @@ class LLMAgent(Policy):
             self.system += "\n/no_think"
         self.tools = family.toolbox.specs()
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+        # A local server must never go through the HTTP(S)_PROXY / ALL_PROXY of the environment: a desktop
+        # proxy answers requests for localhost with 502 Bad Gateway.
         self.client = httpx.Client(base_url=self.cfg.base_url, headers=headers, timeout=self.cfg.timeout_s,
-                                   transport=transport)
+                                   transport=transport, trust_env=not is_loopback(self.cfg.base_url))
         self.st = _fresh_state()
 
     def get_state(self) -> dict[str, Any]:
