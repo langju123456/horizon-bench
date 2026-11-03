@@ -1,0 +1,32 @@
+{
+  "batches": [
+    "mac-baseline",
+    "qwen3-8b-nothink"
+  ],
+  "runs": 500,
+  "splits": [
+    "eval"
+  ],
+  "eval_salt_sha256": [
+    "bd19da6595bd653ec071cda68a4be0b7e529b4a1e4ad3d252671394c4179590e"
+  ],
+  "seeds_sha256": "326f47209d29c36ad341e7de10d98724b540cbef4d3672528e956465db1fd8f0",
+  "dev_seeds": [],
+  "eval_seed_count": 20,
+  "policies": [
+    "lazy",
+    "llm:hb-qwen3-8b",
+    "naive",
+    "pid",
+    "random"
+  ],
+  "horizons": [
+    60,
+    120,
+    240
+  ],
+  "session_len": [
+    40
+  ],
+  "git_commit": "7bf0048d4fbddd36a28f8547f41548d18fe8d530"
+}
