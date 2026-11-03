@@ -49,7 +49,7 @@ them up.
   sent `reasoning_effort: "none"`; the run script now stops if completions stay long.
 
 One résumé line that is true: *Ran qwen3:8b on horizon-bench (40 runs): 0 successes; it lost control in 30 runs, all
-under a feed-composition change, after adjusting the coolant 5–10× less often than a PI baseline; it read its handoff
+under a feed-composition change, after adjusting the coolant 5–11× less often than a PI baseline; it read its handoff
 notes after every reset but had rarely written any, and 3 of its 4 final reports fabricated events.*
 
 ## Do not claim
