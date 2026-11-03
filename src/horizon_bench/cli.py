@@ -60,10 +60,16 @@ def cmd_run(args: argparse.Namespace) -> int:
                         session_len=args.session_len,
                         seed=seed, split=args.split, seed_index=i, salt_sha256=salt_hash(salt) if salt else None,
                         llm=llm if policy == "llm" else None, prices=prices)
-                    if store.status(spec.run_id) is not None and not args.overwrite:
-                        print(f"skip {spec.run_id}: exists (use --overwrite, or `hb resume` if it was killed)")
+                    status = store.status(spec.run_id)
+                    if status == "done" and not args.overwrite:
+                        print(f"skip {spec.run_id}: done (use --overwrite to run it again)")
                         continue
-                    v = runner.start(spec, make_policy(spec, api_key=_api_key(args)), overwrite=args.overwrite)
+                    if status == "running" and not args.overwrite:
+                        print(f"resume {spec.run_id}: it was interrupted", flush=True)
+                        stored = store.spec(spec.run_id)
+                        v = runner.resume(spec.run_id, make_policy(stored, api_key=_api_key(args)))
+                    else:
+                        v = runner.start(spec, make_policy(spec, api_key=_api_key(args)), overwrite=args.overwrite)
                     successes, total = successes + v["success"], total + 1
                     lost = v["onset_step"] is not None
                     onset = f"onset {v['onset_cause']}@{v['onset_step']}" if lost else "in control"
