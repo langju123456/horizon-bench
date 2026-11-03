@@ -1,7 +1,7 @@
 # Mac run status
 
 - state: **running**
-- updated: 2026-11-03 14:15 CST
+- updated: 2026-11-03 14:26 CST
 - machine: Mac16,13, 24 GB, macOS 26.3.1
 - ollama: ollama version is 0.32.1
 - model: qwen3:8b (as hb-qwen3-8b, num_ctx 16384), thinking: off (/no_think)
@@ -23,7 +23,7 @@ Phase: LLM smoke test
   
   !!
     corresp(dist, value, root_dir)
-  /private/var/folders/3l/zjx6gqt12nsgcyvystl2nv3w0000gn/T/pip-build-env-g1cdnbt6/overlay/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: BuildBackendWarning: `project.license` as a TOML table is deprecated
+  /private/var/folders/3l/zjx6gqt12nsgcyvystl2nv3w0000gn/T/pip-build-env-21f6phn0/overlay/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: BuildBackendWarning: `project.license` as a TOML table is deprecated
   !!
   
           ********************************************************************************
@@ -37,7 +37,7 @@ Phase: LLM smoke test
   
   !!
     corresp(dist, value, root_dir)
-  /private/var/folders/3l/zjx6gqt12nsgcyvystl2nv3w0000gn/T/pip-build-env-g1cdnbt6/overlay/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: BuildBackendWarning: `project.license` as a TOML table is deprecated
+  /private/var/folders/3l/zjx6gqt12nsgcyvystl2nv3w0000gn/T/pip-build-env-21f6phn0/overlay/lib/python3.12/site-packages/setuptools/config/_apply_pyprojecttoml.py:82: BuildBackendWarning: `project.license` as a TOML table is deprecated
   !!
   
           ********************************************************************************
@@ -51,6 +51,6 @@ Phase: LLM smoke test
   
   !!
     corresp(dist, value, root_dir)
-[11-03 14:15:24] eval salt sha256 bd19da6595bd653ec071cda68a4be0b7e529b4a1e4ad3d252671394c4179590e (salt stays in /Users/ju.l/code/horizon-bench/.hb, never committed)
-skip mac-baseline-random-rich-h240-eval019: exists (use --overwrite, or `hb resume` if it was killed)
+[11-03 14:26:29] eval salt sha256 bd19da6595bd653ec071cda68a4be0b7e529b4a1e4ad3d252671394c4179590e (salt stays in /Users/ju.l/code/horizon-bench/.hb, never committed)
+skip mac-baseline-random-rich-h240-eval019: done (use --overwrite to run it again)
 ```
