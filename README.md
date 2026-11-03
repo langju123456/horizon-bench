@@ -5,10 +5,9 @@ simulated heated reactor for a whole shift through tool calls. It records, for e
 the agent lost control**, whether richer tool returns help or mislead it, whether its memory survives context
 resets, and it judges success only from hidden true state so that the agent cannot talk its way to a pass.
 
-> **Status:** the bench, the scripted baselines and the LLM agent code are done and tested.
-> Scripted baselines were run here (480 runs, numbers below). **No real LLM has been run yet**: this
-> environment had no model API, so the LLM agent is tested only against a mocked OpenAI-compatible server.
-> See [LLM results](#llm-results-not-yet-run).
+> **Status:** the bench, the scripted baselines and the LLM agent are done and tested, and a first real model has
+> been run: **qwen3:8b through Ollama on a MacBook, 40 runs, 0 successes**; it lost control in 30 of them, every time
+> while a feed-composition change was active. See [LLM results](#llm-results-qwen38b-on-a-mac).
 
 ## What it measures, and how
 
@@ -219,11 +218,43 @@ the final pid policy over a 5 × 4 gain grid: at most 12/20 on the faster plant,
 (rich) on the slower one with the chosen gains (Kp = 6, Ki = 0.1, picked by grid search on dev seeds 0–19).
 The environment was frozen before the eval run.
 
-## LLM results: not yet run
+## LLM results: qwen3:8b on a Mac
 
-Nothing in this README comes from a language model. To produce LLM results, run `hb run --policy llm ...` (see
-[the Ollama section](#running-an-llm-on-a-mac-with-ollama)) and then `hb report --name <name> --batch baseline
---batch <llm batch>`; the report adds the LLM rows, failure-onset contexts and the latency/token/cost table.
+Run on 2026-11-03 with `scripts/mac_llm_run.sh`: Ollama 0.32.1 on a MacBook Air (24 GB), `qwen3:8b` with a
+16 384-token context and thinking off (`--no-think`, i.e. `reasoning_effort: "none"`), temperature 0. The scripted
+baseline was re-run on the same machine's eval salt (`bd19da65…`), so every row below shares the same 20 eval seeds;
+the LLM ran the first 10 of them at horizons 60 and 120 with both tool formats (40 runs). Full report:
+[`reports/llm-vs-baseline/report.md`](reports/llm-vs-baseline/report.md).
+
+| policy | tools | h=60 success | h=120 success | control kept (60 / 120) | median failure-onset step (60 / 120) | stale reads/run (60 / 120) |
+|---|---|---|---|---|---|---|
+| pid | bare | 19/20 | 17/20 | 20/20 / 19/20 | - / 101 | 0.70 / 1.20 |
+| pid | rich | 18/20 | 16/20 | 20/20 / 20/20 | - / - | 0.00 / 0.00 |
+| qwen3:8b | bare | 0/10 | 0/10 | 4/10 / 2/10 | 42 / 46 | 0.50 / 3.20 |
+| qwen3:8b | rich | 0/10 | 0/10 | 4/10 / 0/10 | 41 / 45 | 1.80 / 6.00 |
+
+What the traces show (counts from the 40 runs; analysis queries over `runs/hb.sqlite`):
+
+- **It fails at the first sustained disturbance.** It lost control in 30 of 40 runs, and a feed-composition change
+  (a step change of heat release) was active at the onset in all 30; a stuck valve was also active in 6, a stale basis
+  in 9. Onsets fell between steps 26 and 107, most of them between 35 and 53. 20 of the 30 excursions went below the
+  band (too cold) and 10 above.
+- **It watches more than it acts.** Per run it moved the coolant 1.6–7.1 times, against 18–37 times for the PI
+  controller over the same horizon, and it lost 9–21 steps per run to replies without a tool call (each costs a step).
+- **Handoffs carried almost nothing.** After every context reset (60 of 60) it called `read_notes` within five steps,
+  but in three of the four cells it wrote at most two notes in ten runs, so only 4 of the 40 note reads in those cells
+  returned anything. In the one cell where it did write notes (bare, 120 steps: 5.2 per run, all 24 reads non-empty)
+  it still lost control in 8 of 10 runs. The first reset is at step 40, inside the onset window; this run does not
+  isolate whether the reset itself contributes.
+- **Alarms and reports.** 195 of 249 alarms were acknowledged late (more than 10 steps), so no run met the alarm
+  deadline. It called `finish` in only 4 runs (all at step 119 of 120); 3 of those 4 reports listed events that did
+  not happen, which the verifier flags as fabricated. It never used the log-edit loophole.
+- **Rich tool returns did not help this model.** Control kept 4/10 vs 4/10 at 60 steps and 0/10 vs 2/10 at 120
+  (rich vs bare); with rich returns it made more stale-basis decisions (1.80 vs 0.50 and 6.00 vs 3.20 per run) and
+  more replies without a tool call (21.0 vs 12.1 per run at 120). With 10 runs per cell these differences are inside
+  the noise.
+- **Cost of a run.** p50 2.3–2.8 s and p95 9.2–11.9 s per model call; 123k–356k tokens per run; local, so no API cost.
+  With thinking left on, a call took about 72 s and used about 965 completion tokens, which is why thinking was off.
 
 ## Relation to EvidenceLoop
 
@@ -236,8 +267,8 @@ state and the true event log; and failures are attributed to the earliest point 
 
 ## Limitations
 
-- The LLM agent is tested only against an in-process fake server (malformed calls, text-only replies, budgets,
-  context trimming, session resets, crash/resume); it has not yet been run against a live Ollama server.
+- One real model so far (qwen3:8b, thinking off, 10 seeds per cell, horizons 60 and 120); nothing here says how a
+  larger model or one with thinking on would do.
 - The context budget uses a characters/4 token estimate; the wall-time budget counts model latency only.
 - One reference controller, one task family, 20 seeds per cell: the confidence intervals are wide.
 - "Lost control" and the 8-step recovery window are definitions chosen for this task, not standards.
@@ -257,7 +288,7 @@ src/horizon_bench/
   report.py, cli.py                    hb report; the hb command
 tests/                                 36 pytest tests
 reports/baseline/                      committed baseline report, charts and manifest
-docs/RESUME_NOTES.md                   facts that are true today, with placeholders for LLM results
+docs/RESUME_NOTES.md                   facts that are true today, including the first real-model results
 ```
 
 ## 中文摘要
@@ -271,7 +302,10 @@ horizon-bench 是一个测试长程 LLM Agent 的小型实验台：Agent 通过�
 
 已完成的结果只有脚本策略的基线（480 次运行，评测集种子）：称职的 PI 控制器在 60/120/240 步的成功率分别为 19–20/20、17/20、11–13/20；
 rich 工具把 stale-read 错误从每次 0.55/1.10/2.50 降到 0，但没有提高成功率（差异在 95% 置信区间内）；偷懒策略骗过了"相信日志"的朴素评分器 100%，被本验证器判定成功 0%。
-**真实 LLM 还没有跑过**：本环境无法访问模型 API，LLM Agent 只在模拟的 OpenAI 兼容服务器上测试过。在 Mac 上用 Ollama 运行 `hb run --policy llm --model qwen3:8b ...`，再运行 `hb report` 即可得到 LLM 结果。
+**真实模型的第一轮结果**（qwen3:8b，Ollama，MacBook，关闭思考，40 次运行）：成功 0 次；30 次失控，失控时都有进料成分变化在起作用，多数发生在第 35–53 步。
+它看得多、动得少：每次运行只调 1.6–7.1 次冷却水，PI 控制器是 18–37 次，另有 9–21 步浪费在没有调用工具的回复上。
+会话重置后它每次都先读笔记，但在四组里的三组几乎从不写笔记，交接等于空白。报警 249 个里有 195 个超时确认；只有 4 次运行调用了 finish，其中 3 份报告编造了没发生的事件，漏洞工具一次没用。
+rich 工具返回没有帮到这个模型（每组 10 次，差异在噪声范围内）。
 
 ## License
 
