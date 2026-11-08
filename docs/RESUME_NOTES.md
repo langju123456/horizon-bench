@@ -1,6 +1,6 @@
 # Résumé notes for horizon-bench
 
-Only facts that are true as of the baseline commit (`507dcf1`, report in `reports/baseline/`). Everything about
+Only facts that are true as of the baseline commit (`3aced43`, report in `reports/baseline/`). Everything about
 LLMs is a placeholder until `hb run --policy llm` has actually been run. Keep the numbers exact; do not round
 them up.
 

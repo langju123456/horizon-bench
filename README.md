@@ -153,7 +153,7 @@ public seeds (with different numbers).
 
 ## Baseline results (scripted policies, eval split)
 
-Produced by `scripts/run_baseline.sh` at commit `507dcf1` from a clean tree: 4 policies × 2 tool modes × 3 horizons
+Produced by `scripts/run_baseline.sh` at commit `3aced43` from a clean tree: 4 policies × 2 tool modes × 3 horizons
 × 20 eval seeds = 480 runs, about 30 s on one CPU. Running it twice from scratch gave identical tables, and all 480
 runs pass `hb replay`. Full report: [`reports/baseline/report.md`](reports/baseline/report.md).
 
