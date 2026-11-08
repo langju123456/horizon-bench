@@ -194,6 +194,9 @@ Detail at horizon 120:
 
 What these numbers do and do not show:
 
+- **A grader that trusts the log can be gamed; this verifier was not.** The scripted lazy agent wipes the operator
+  log and files a fabricated report: a naive log-trusting grader passes it in all 120 of its runs (2 tool modes ×
+  3 horizons × 20 seeds), the true-state verifier in none (`reports/baseline/report.md`, lazy rows).
 - **Long horizons hurt even a competent controller.** pid goes from 19–20/20 at 60 steps to 17/20 at 120 and
   11–13/20 at 240. Every pid loss of control was a temperature excursion. At 240 steps the most common context at
   onset was a stuck coolant valve under a changed feed composition (3 of 5 bare and 3 of 6 rich onsets); a stuck
@@ -288,7 +291,6 @@ src/horizon_bench/
   report.py, cli.py                    hb report; the hb command
 tests/                                 36 pytest tests
 reports/baseline/                      committed baseline report, charts and manifest
-docs/RESUME_NOTES.md                   facts that are true today, including the first real-model results
 ```
 
 ## 中文摘要
