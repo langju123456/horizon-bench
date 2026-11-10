@@ -19,8 +19,10 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from horizon_bench import otel
 from horizon_bench.agents.base import Action, Observation, Policy
 from horizon_bench.family import Family
+from horizon_bench.prefix_cache import classify, fingerprint, reported_cached_tokens, shared_prefix
 from horizon_bench.spec import RunSpec
 
 SUMMARY_KEY = "context_summary"
@@ -51,8 +53,11 @@ def is_loopback(url: str) -> bool:
 
 
 def _fresh_state() -> dict[str, Any]:
+    # prefix: fingerprint of the last prompt plus its reply (what a server's prefix cache holds after that call);
+    # trimmed / reset: the window was cut or the context erased since that call (see prefix_cache.classify).
     return {"messages": [], "queue": [], "pending": None, "nudge": False, "tokens": 0, "calls": 0,
-            "actions": 0, "wall_s": 0.0, "errors": 0, "summaries": 0}
+            "actions": 0, "wall_s": 0.0, "errors": 0, "summaries": 0, "prefix": None, "trimmed": False,
+            "reset": False}
 
 
 class LLMAgent(Policy):
@@ -81,8 +86,8 @@ class LLMAgent(Policy):
         self.st = copy.deepcopy(state)
 
     def start_session(self, session: int, step: int) -> None:
-        keep = {k: self.st[k] for k in ("tokens", "calls", "actions", "wall_s", "summaries")}
-        self.st = {**_fresh_state(), **keep}
+        keep = {k: self.st.get(k) for k in ("tokens", "calls", "actions", "wall_s", "summaries", "prefix")}
+        self.st = {**_fresh_state(), **keep, "reset": session > 0}
         n = math.ceil(self.spec.horizon / self.spec.session_len)
         intro = f"Session {session + 1} of {n} starts at step {step}. "
         intro += ("Your earlier conversation was erased; call read_notes() to recover your handoff notes."
@@ -152,6 +157,7 @@ class LLMAgent(Policy):
         note = (f"[step {step}] Older messages were removed to fit the context budget; a summary of them "
                 f"was saved to note '{SUMMARY_KEY}' (read_notes).")
         self.st["messages"] = [msgs[0], {"role": "user", "content": note}, *msgs[cut:]]
+        self.st["trimmed"] = True
         self.st["actions"] += 1
         self.st["pending"] = {"id": None, "name": "write_note"}  # synthetic: no tool message follows
         return Action("write_note", {"key": SUMMARY_KEY, "text": summarize(dropped)},
@@ -165,29 +171,40 @@ class LLMAgent(Policy):
         if c.no_think:
             # Recent Ollama ignores the /no_think text switch; reasoning_effort "none" is its documented off switch.
             payload["reasoning_effort"] = "none"
-        t0 = time.perf_counter()
-        try:
-            resp = self.client.post("/chat/completions", json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            msg = data["choices"][0]["message"]
-        except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as e:
+        current = fingerprint(self.tools, st["messages"])
+        _, shared_chars = shared_prefix(st.get("prefix"), current)
+        prefix_break = classify(st.get("prefix"), current, trimmed=bool(st.get("trimmed")),
+                                reset=bool(st.get("reset")))
+        cache: dict[str, Any] = {"prefix_reuse_tokens": shared_chars // 4, "prefix_break": prefix_break}
+        with otel.chat_span(c.model, c.base_url, payload, context, cache) as span:
+            t0 = time.perf_counter()
+            try:
+                resp = self.client.post("/chat/completions", json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+                msg = data["choices"][0]["message"]
+            except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as e:
+                latency = (time.perf_counter() - t0) * 1000
+                st["wall_s"] += latency / 1000
+                st["errors"] += 1
+                otel.chat_failed(span, e)
+                if st["errors"] >= c.max_consecutive_errors:
+                    return Action(None, abort=f"llm_errors ({type(e).__name__}: {str(e)[:120]})")
+                return Action(None, meta={"llm_call": False, "latency_ms": latency, "context_tokens": context,
+                                          "note": f"llm error: {type(e).__name__}: {str(e)[:200]}"})
             latency = (time.perf_counter() - t0) * 1000
-            st["wall_s"] += latency / 1000
-            st["errors"] += 1
-            if st["errors"] >= c.max_consecutive_errors:
-                return Action(None, abort=f"llm_errors ({type(e).__name__}: {str(e)[:120]})")
-            return Action(None, meta={"llm_call": False, "latency_ms": latency, "context_tokens": context,
-                                      "note": f"llm error: {type(e).__name__}: {str(e)[:200]}"})
-        latency = (time.perf_counter() - t0) * 1000
-        usage = data.get("usage") or {}
-        pt, ct = int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+            usage = data.get("usage") or {}
+            pt, ct = int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0)
+            cached = reported_cached_tokens(usage)
+            cache["cached_tokens"] = cached
+            otel.chat_done(span, data, pt, ct, cached)
         st["tokens"] += pt + ct
         st["calls"] += 1
         st["wall_s"] += latency / 1000
         st["errors"] = 0
+        st["trimmed"] = st["reset"] = False
         meta = {"llm_call": True, "prompt_tokens": pt, "completion_tokens": ct, "latency_ms": latency,
-                "context_tokens": context}
+                "context_tokens": context, **cache}
 
         content = re.sub(r"<think>.*?</think>", "", msg.get("content") or "", flags=re.S).strip()
         calls = []
@@ -202,6 +219,7 @@ class LLMAgent(Policy):
             assistant["tool_calls"] = [{"id": x["id"], "type": "function",
                                         "function": {"name": x["tool"], "arguments": x["raw"] or "{}"}} for x in calls]
         st["messages"].append(assistant)
+        st["prefix"] = fingerprint(self.tools, st["messages"])  # the server now holds this prompt + reply
         if not calls:
             st["actions"] += 1
             st["nudge"] = True

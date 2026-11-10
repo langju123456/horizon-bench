@@ -18,6 +18,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.5", "mypy>=1.10"]
+# OpenTelemetry traces of runs (hb run --otel); horizon_bench.otel is a no-op without it.
+otel = ["opentelemetry-api>=1.25", "opentelemetry-sdk>=1.25", "opentelemetry-exporter-otlp-proto-http>=1.25"]
 
 [project.scripts]
 hb = "horizon_bench.cli:main"

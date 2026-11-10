@@ -30,7 +30,17 @@ Group = tuple[str, str, int]  # (policy label, tools, horizon)
 
 
 def policy_label(spec: RunSpec) -> str:
-    return f"llm:{(spec.llm or {}).get('model', '?')}" if spec.policy == "llm" else spec.policy
+    """Row label. LLM runs whose harness differs from the defaults (context window) get their own row."""
+    if spec.policy != "llm":
+        return spec.policy
+    llm = spec.llm or {}
+    label = f"llm:{llm.get('model', '?')}"
+    from horizon_bench.agents.llm import LLMConfig
+
+    default = LLMConfig()
+    tags = [f"{tag}{llm[key]}" for key, tag in (("keep_last_messages", "keep"), ("context_budget_tokens", "ctx"))
+            if key in llm and llm[key] != getattr(default, key)]
+    return label + (f"[{','.join(tags)}]" if tags else "")
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
@@ -147,6 +157,35 @@ def _usage_rows(groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]], label
                  for f in ("policy", "tools", "horizon")]
         rows.append("| " + " | ".join([*names, *["n/a (scripted, no model calls)"] * 5]) + " |")
     return rows
+
+
+def _cache_rows(groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]], labels: list[str]) -> list[str]:
+    """Prompt-prefix reuse per group; groups without the measurement (scripted, older runs) are left out."""
+    rows = ["| policy | tools | horizon | calls/run | prompt reusable from previous call (est.) | prefix breaks/run "
+            "(trim / session reset) | extends previous: p50 latency (ms) / p50 tokens to compute | right after a trim: "
+            "p50 latency (ms) / p50 tokens to compute | cached tokens reported by server |", "|" + "---|" * 9]
+    for key in sorted(groups, key=lambda g: (labels.index(g[0]), g[1], g[2])):
+        caches = [v["usage"].get("prefix_cache") for _, v in groups[key]]
+        caches = [c for c in caches if c]
+        if not caches:
+            continue
+        n = len(caches)
+        ctx = sum(c["context_tokens_est"] for c in caches)
+        reuse = sum(c["prefix_reuse_tokens_est"] for c in caches)
+        trims = sum(c["breaks"].get("trim", 0) for c in caches) / n
+        resets = sum(c["breaks"].get("session_reset", 0) for c in caches) / n
+        append = [x for c in caches for x in c["latency_append_ms"]]
+        broke = [x for c in caches for x in c["latency_trim_ms"]]
+        work_a = [float(x) for c in caches for x in c.get("recompute_append_tokens", [])]
+        work_b = [float(x) for c in caches for x in c.get("recompute_trim_tokens", [])]
+        reported = [c for c in caches if c["cached_tokens_reported"] is not None]
+        cached = sum(c["cached_tokens_reported"] for c in reported)
+        prompt = max(1, sum(c["prompt_tokens_when_reported"] for c in reported))
+        rep = f"{cached / prompt:.0%} of prompt tokens" if reported else "not reported"
+        cells = [f"{sum(c['calls'] for c in caches) / n:.1f}", f"{reuse / ctx:.0%}" if ctx else "-",
+                 f"{trims:.1f} / {resets:.1f}", _pair(append, work_a), _pair(broke, work_b), rep]
+        rows.append("| " + " | ".join([key[0], key[1], str(key[2]), *cells]) + " |")
+    return rows if len(rows) > 2 else []
 
 
 def _onset_rows(groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]], labels: list[str]) -> list[str]:
@@ -312,6 +351,32 @@ def _manifest(runs: list[tuple[RunSpec, dict[str, Any]]], batches: list[str]) ->
     }
 
 
+def _pair(latency: list[float], tokens: list[float]) -> str:
+    if not latency:
+        return "-"
+    work = f"{percentile(tokens, 50):.0f}" if tokens else "-"
+    return f"{percentile(latency, 50):.0f} / {work}"
+
+
+def _cache_section(groups: dict[Group, Any], labels: list[str]) -> list[str]:
+    rows = _cache_rows(groups, labels)
+    if not rows:
+        return []
+    return [
+        "## Prompt prefix reuse", "",
+        "How much of each model call's prompt is identical to the previous call's prompt plus reply, i.e. what a "
+        "server's prefix (KV) cache can reuse instead of recomputing; whole messages, characters / 4, so a lower "
+        "bound. A *break* is a call whose prompt diverges right after the system prompt: the rolling window was "
+        "trimmed or the context was reset at a session boundary. Servers that report cached tokens (OpenAI, "
+        "vLLM, llama.cpp server) fill the last column; Ollama does not, so there the effect shows in the latency "
+        "columns. *Tokens to compute* is the estimated prompt minus the reusable prefix: a call right after a trim "
+        "has a shorter prompt (the window was just cut) but must compute almost all of it, because every kept "
+        "message moved. Session resets erase the context by design and are only counted. See "
+        "`horizon_bench/prefix_cache.py`.", "",
+        *rows, "",
+    ]
+
+
 def _markdown(name: str, groups: dict[Group, Any], labels: list[str], horizons: list[int], focus_h: int,
               manifest: dict[str, Any]) -> str:
     lines = [
@@ -333,6 +398,7 @@ def _markdown(name: str, groups: dict[Group, Any], labels: list[str], horizons: 
         "## Latency and cost", "",
         "Scripted policies make no model calls, so these columns are n/a rather than invented.", "",
         *_usage_rows(groups, labels), "",
+        *_cache_section(groups, labels),
         "## Manifest", "", "```json", json.dumps(manifest, indent=2), "```", "",
     ]
     return "\n".join(lines)
