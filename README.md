@@ -91,7 +91,7 @@ them. Tool JSON schemas are generated from the same pydantic models that validat
 
 ```bash
 pip install -e ".[dev]"
-pytest                      # 36 tests, ~5 s
+pytest                      # 51 tests, ~5 s (the OTel tests skip without the otel extra)
 ruff check src tests && mypy
 
 hb run --policy pid --tools rich --seeds 20 --horizon 120          # dev seeds 0..19
@@ -106,6 +106,40 @@ hb resume <run_id>                                                 # continue a 
 Runs go to `runs/hb.sqlite` plus `runs/<run_id>/trace.jsonl` and `verdict.json`. A trace record holds the step,
 session, tool, arguments, the result exactly as the agent saw it, flags (`loop`, `stale_read_used`,
 `invalid_args`, `loophole_used`), tokens, latency, cost, context size, and the hidden true state for analysis.
+
+## Tracing and prompt-cache measurement
+
+**OpenTelemetry traces.** `pip install -e ".[otel]"`, then `hb run ... --otel` exports one trace per run over
+OTLP/HTTP (`--otel-endpoint`, or the standard `OTEL_EXPORTER_OTLP_*` variables; `--otel-console` prints instead).
+The span tree is `hb.run` → `hb.session` → `hb.step` → `chat <model>` and `execute_tool <tool>`. Step spans carry
+the tool, arguments, result, the four flags and the hidden true plant state; model spans use the OpenTelemetry
+GenAI attribute names (`gen_ai.request.model`, `gen_ai.usage.input_tokens`, `gen_ai.usage.cache_read.input_tokens`,
+...), so Jaeger, Phoenix or Langfuse show them as LLM calls; the run span ends with the verdict and a
+`failure_onset` event. Eval-split seeds are not exported. Tracing is a second view only: a test checks that the
+JSONL trace is byte-identical with and without it, and without the extra installed every hook is a no-op.
+
+```bash
+docker run -d -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one:latest     # then http://localhost:16686
+hb run --policy llm --model qwen3:8b --no-think --horizon 60 --seeds 1 --otel --otel-endpoint http://localhost:4318/v1/traces
+```
+
+**Prompt prefix reuse.** A local server keeps the KV cache of the previous prompt and reuses the longest common
+prefix (Ollama and llama.cpp per slot, vLLM with automatic prefix caching). In this agent loop each prompt is the
+previous prompt plus the reply plus one tool result, so nearly all of it is reusable, until the rolling window
+trims: the note it inserts after the system prompt moves every kept message, and the next call recomputes almost
+the whole prompt. Every model call now records `prefix_break` (`first`, `trim`, `session_reset`, or none when the
+prompt extends the previous one), `prefix_reuse_tokens` (whole messages shared with the previous prompt and reply,
+estimated on the client, so independent of the server) and `cached_tokens` (what the server reports, when it does:
+OpenAI, vLLM with `--enable-prompt-tokens-details`, llama.cpp server; Ollama does not). `hb report` adds a *Prompt
+prefix reuse* section: reusable share, trims and resets per run, and p50 latency and tokens to compute for calls
+that extend the previous prompt vs calls right after a trim. `--keep-last-messages` sets how much the window keeps
+when it trims (fewer: trims come less often, less recent context). Measured against an in-process server that
+simulates a one-slot prefix cache (`tests/test_prefix_cache.py`, a scripted dialogue, 2 runs of 120 steps): at the
+default budget there was no trim and 97 % of the prompt tokens were reusable; with a 2 500-token budget the window
+trimmed 16 times per run, the reusable share fell to 83 %, and a call right after a trim had to compute about 1 190
+prompt tokens against about 65 for a call that extends the previous prompt. Those numbers come from a simulation; what a trim costs in latency
+on a real model is what `scripts/mac_cache_run.sh` measures (Ollama, qwen3:8b, keep 24 vs keep 8, results pushed
+to `reports/prompt-cache/`).
 
 ## Running an LLM on a Mac with Ollama
 
