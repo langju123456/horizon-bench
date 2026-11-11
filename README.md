@@ -151,11 +151,12 @@ Air M4 24 GB, rich tools, horizon 120, 3 public dev seeds per row; full report:
 
 - **A trim is paid for on the next call.** Ollama reports no cache figures, but the latency shows it: a call right
   after a trim took 13.2 s at the median against 2.7 s for a call that extends the previous prompt, because the kept
-  window (about 1 400 tokens) was recomputed instead of read from the KV cache. The remaining 2.7 s per normal call
-  is mostly generating the reply, not reading the prompt.
+  window (about 1 400 tokens) was recomputed instead of read from the KV cache. With only about 77 new prompt tokens to
+  compute, most of the 2.7 s of a normal call is probably the reply being generated (this run does not time the two
+  apart).
 - **How much the window keeps sets the price and the frequency.** Keeping 8 messages instead of 24 made each trim
   cost 5.6 s instead of 13.2 s and made trims rarer (3.0 vs 4.3 per run), because the emptier window takes longer to
-  refill. Roughly 9 s of recompute per run instead of 45 s. What it costs in the agent's control of the plant this
+  refill. Counting the extra latency of the call after each trim, that is about 8 s per run instead of about 45 s. What it costs in the agent's control of the plant this
   run cannot say: with 3 seeds per row and qwen3:8b failing every run in all three rows, the control columns are
   noise.
 - **At the default budget the window never trimmed**: the 40-step sessions reset the context before it filled up,
