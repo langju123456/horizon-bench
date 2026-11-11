@@ -1,7 +1,8 @@
 {
   "batches": [
     "cache-keep24",
-    "cache-keep8"
+    "cache-ctx4000-keep24",
+    "cache-ctx4000-keep8"
   ],
   "runs": 6,
   "splits": [
@@ -17,7 +18,7 @@
   "eval_seed_count": 0,
   "policies": [
     "llm:hb-qwen3-8b",
-    "llm:hb-qwen3-8b[keep8]"
+    "llm:hb-qwen3-8b[ctx4000]"
   ],
   "horizons": [
     120
@@ -25,5 +26,5 @@
   "session_len": [
     40
   ],
-  "git_commit": "2e54ec2f097d65fb39895ae98603cf53d8d1bbd3"
+  "git_commit": "edc130bb52ee93505645483a7973cf7fadd710b1"
 }
