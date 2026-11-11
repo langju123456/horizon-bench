@@ -1,0 +1,28 @@
+{
+  "batches": [
+    "cache-keep24",
+    "cache-keep24"
+  ],
+  "runs": 3,
+  "splits": [
+    "dev"
+  ],
+  "eval_salt_sha256": [],
+  "seeds_sha256": "222ca6ee110834e573b99ae87533f6d0e436ec5da61bf9c78fed3f34a20404d7",
+  "dev_seeds": [
+    0,
+    1,
+    2
+  ],
+  "eval_seed_count": 0,
+  "policies": [
+    "llm:hb-qwen3-8b"
+  ],
+  "horizons": [
+    120
+  ],
+  "session_len": [
+    40
+  ],
+  "git_commit": "3961f37a1773647dc3b9e1c174261df9b7255caf"
+}
