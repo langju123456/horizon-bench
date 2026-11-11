@@ -7,9 +7,11 @@
 # the window size change how often that cost is paid? Ollama reuses the KV cache of the previous prompt for the
 # longest common prefix; a trim moves every kept message, so the next call recomputes almost the whole prompt.
 #
-# Two arms, same 3 public dev seeds, rich tools, horizon 120, context budget 8000 (the default):
-#   keep24  the default window: trim keeps the last 24 messages
-#   keep8   trim keeps the last 8 messages: the window empties further, so trims come less often
+# Arms, same 3 public dev seeds, rich tools, horizon 120 (HB_ARMS="budget:keep ...", default "4000:24 4000:8"):
+#   4000:24  context budget 4000 estimated tokens, trim keeps the last 24 messages
+#   4000:8   same budget, trim keeps the last 8: the window empties further, so trims come less often
+# (At the default budget of 8000 a 40-step session never fills the window, so nothing is trimmed: batch
+# cache-keep24 from the first run, kept in the report as the no-trim reference.)
 # Each arm reports: prompt share reusable from the previous call, trims per run, and p50 latency and tokens to
 # compute for calls that extend the previous prompt vs calls right after a trim (hb report, "Prompt prefix reuse").
 #
@@ -89,18 +91,23 @@ pipeline() {
   .venv/bin/python -m pip install -q -e '.[otel]' || fail "pip install"
   HB=".venv/bin/hb"
 
-  local seeds="${HB_SEEDS:-3}" horizon="${HB_HORIZON:-120}"
-  for keep in 24 8; do
-    status running "Arm keep$keep: $seeds dev seeds, horizon $horizon"
-    publish "Mac cache run: status"
-    log "arm keep$keep"
-    "$HB" run --policy llm --model "$HBM" --base-url "$OLLAMA_URL/v1" --no-think --tools rich --horizon "$horizon" \
-          --seeds "$seeds" --split dev --keep-last-messages "$keep" --name "cache-keep$keep" \
-          || fail "arm keep$keep"
-    "$HB" report --name prompt-cache --batch cache-keep24 --batch "cache-keep$keep" >/dev/null || fail "report"
+  local seeds="${HB_SEEDS:-3}" horizon="${HB_HORIZON:-120}" batches="" arm budget keep
+  for b in cache-keep24 $(for arm in ${HB_ARMS:-4000:24 4000:8}; do echo "cache-ctx${arm%%:*}-keep${arm##*:}"; done); do
+    batches="$batches --batch $b"
   done
-  status done "Both arms finished. Report: reports/prompt-cache/report.md (section: Prompt prefix reuse)"
-  publish "Mac cache run: $MODEL, keep 24 vs keep 8 ($seeds dev seeds, horizon $horizon)"
+  for arm in ${HB_ARMS:-4000:24 4000:8}; do
+    budget="${arm%%:*}"; keep="${arm##*:}"
+    status running "Arm budget $budget, keep $keep: $seeds dev seeds, horizon $horizon"
+    publish "Mac cache run: status"
+    log "arm budget $budget keep $keep"
+    "$HB" run --policy llm --model "$HBM" --base-url "$OLLAMA_URL/v1" --no-think --tools rich --horizon "$horizon" \
+          --seeds "$seeds" --split dev --context-budget "$budget" --keep-last-messages "$keep" \
+          --name "cache-ctx$budget-keep$keep" || fail "arm $arm"
+    # shellcheck disable=SC2086
+    "$HB" report --name prompt-cache $batches >/dev/null 2>&1 || "$HB" report --name prompt-cache --batch "cache-ctx$budget-keep$keep" >/dev/null || fail "report"
+  done
+  status done "All arms finished. Report: reports/prompt-cache/report.md (section: Prompt prefix reuse)"
+  publish "Mac cache run: $MODEL, arms ${HB_ARMS:-4000:24 4000:8} ($seeds dev seeds, horizon $horizon)"
   osascript -e 'display notification "prompt-cache run finished and pushed" with title "horizon-bench"' >/dev/null 2>&1
   log "==== done ===="
 }
