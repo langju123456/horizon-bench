@@ -137,9 +137,29 @@ when it trims (fewer: trims come less often, less recent context). Measured agai
 simulates a one-slot prefix cache (`tests/test_prefix_cache.py`, a scripted dialogue, 2 runs of 120 steps): at the
 default budget there was no trim and 97 % of the prompt tokens were reusable; with a 2 500-token budget the window
 trimmed 16 times per run, the reusable share fell to 83 %, and a call right after a trim had to compute about 1 190
-prompt tokens against about 65 for a call that extends the previous prompt. Those numbers come from a simulation; what a trim costs in latency
-on a real model is what `scripts/mac_cache_run.sh` measures (Ollama, qwen3:8b, keep 24 vs keep 8, results pushed
-to `reports/prompt-cache/`).
+prompt tokens against about 65 for a call that extends the previous prompt. Those numbers come from a simulation.
+
+**Measured on a Mac** (2026-11-11, `scripts/mac_cache_run.sh`: Ollama 0.32.1, qwen3:8b with thinking off, MacBook
+Air M4 24 GB, rich tools, horizon 120, 3 public dev seeds per row; full report:
+[`reports/prompt-cache/report.md`](reports/prompt-cache/report.md)):
+
+| context budget / window kept on trim | trims per run | prompt reusable from the previous call | call extends previous: p50 latency / tokens to compute | call right after a trim: p50 latency / tokens to compute |
+|---|---|---|---|---|
+| 8 000 / 24 messages (default) | 0 | 97 % | 2.8 s / 77 | - |
+| 4 000 / 24 messages | 4.3 | 95 % | 2.7 s / 77 | 13.2 s / 1 394 |
+| 4 000 / 8 messages | 3.0 | 96 % | 2.8 s / 71 | 5.6 s / 494 |
+
+- **A trim is paid for on the next call.** Ollama reports no cache figures, but the latency shows it: a call right
+  after a trim took 13.2 s at the median against 2.7 s for a call that extends the previous prompt, because the kept
+  window (about 1 400 tokens) was recomputed instead of read from the KV cache. The remaining 2.7 s per normal call
+  is mostly generating the reply, not reading the prompt.
+- **How much the window keeps sets the price and the frequency.** Keeping 8 messages instead of 24 made each trim
+  cost 5.6 s instead of 13.2 s and made trims rarer (3.0 vs 4.3 per run), because the emptier window takes longer to
+  refill. Roughly 9 s of recompute per run instead of 45 s. What it costs in the agent's control of the plant this
+  run cannot say: with 3 seeds per row and qwen3:8b failing every run in all three rows, the control columns are
+  noise.
+- **At the default budget the window never trimmed**: the 40-step sessions reset the context before it filled up,
+  so the only breaks were the session resets (1.7 per run).
 
 ## Running an LLM on a Mac with Ollama
 
