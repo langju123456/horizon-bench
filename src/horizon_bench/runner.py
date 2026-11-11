@@ -15,6 +15,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
+from horizon_bench import otel
 from horizon_bench.agents.base import Action, Observation, Policy
 from horizon_bench.family import EpisodeEnd, Family, get_family
 from horizon_bench.spec import RunSpec
@@ -24,6 +25,7 @@ from horizon_bench.tools import BaseToolBox, ToolOutcome
 from horizon_bench.verifier import verify
 
 KILL_ENV = "HB_FAULT_KILL_AT_STEP"  # fault injection: SIGKILL this process after saving step N
+CACHE_FIELDS = ("prefix_reuse_tokens", "prefix_break", "cached_tokens")  # see horizon_bench.prefix_cache
 
 
 class SimulatedCrash(RuntimeError):
@@ -120,8 +122,23 @@ class Runner:
             trace = TraceWriter(self.runs_dir / spec.run_id / "trace.jsonl", self.store.records(spec.run_id))
         kill_at = int(os.environ[KILL_ENV]) if os.environ.get(KILL_ENV) else None
         loop = LoopDetector(family.flipflop, st.loop)
+        tracer = otel.RunTracer(spec, resumed_at=env.step or None)
+        try:
+            verdict = self._run_steps(spec, family, env, toolbox, policy, st, loop, trace, tracer, kill_at,
+                                      crash_after)
+        except BaseException as error:
+            tracer.finish(None, error)
+            raise
+        tracer.finish(verdict)
+        return verdict
+
+    def _run_steps(self, spec: RunSpec, family: Family, env: Any, toolbox: BaseToolBox, policy: Policy,
+                   st: RunState, loop: LoopDetector, trace: TraceWriter | None, tracer: otel.RunTracer,
+                   kill_at: int | None, crash_after: int | None) -> dict[str, Any]:
         while env.step < spec.horizon and not env.terminated:
-            record = self._step(spec, env, toolbox, policy, st, loop)
+            with tracer.step(env.step, env.step // spec.session_len) as span:
+                record = self._step(spec, env, toolbox, policy, st, loop)
+                otel.step_done(span, record)
             env.advance()
             st.loop = loop.state
             checkpoint = {"env": env.to_dict(), "tools": toolbox.to_dict(), "policy": policy.get_state(),
@@ -165,6 +182,11 @@ class Runner:
                    completion_tokens=int(meta.get("completion_tokens", 0)),
                    llm_latency_ms=float(meta.get("latency_ms", 0.0)), context_tokens=int(meta.get("context_tokens", 0)),
                    note=meta.get("note"))
+        # Prefix-cache fields exist only on model calls that measured them, so records of scripted runs and of
+        # runs made before this measurement keep their exact shape (and old runs still replay identically).
+        for key in CACHE_FIELDS:
+            if key in meta:
+                rec[key] = meta[key]
         model = (spec.llm or {}).get("model")
         rec["cost_usd"] = cost_usd(model, rec["prompt_tokens"], rec["completion_tokens"], spec.prices)
         if action.abort:
@@ -178,7 +200,8 @@ class Runner:
         elif action.tool is None:
             out = ToolOutcome(None)
         else:
-            out = toolbox.execute(action.tool, action.args)
+            with otel.tool_span(action.tool):
+                out = toolbox.execute(action.tool, action.args)
         rec["result"] = st.last_result = out.result
         flags = rec["flags"]
         flags["invalid_args"], flags["loophole_used"] = out.invalid_args, out.loophole
@@ -214,7 +237,8 @@ class RecordedPolicy(Policy):
         r = self.by_step[obs.step]
         meta = {"llm_call": r["llm_call"], "prompt_tokens": r["prompt_tokens"],
                 "completion_tokens": r["completion_tokens"], "latency_ms": r["llm_latency_ms"],
-                "context_tokens": r["context_tokens"], "note": r["note"]}
+                "context_tokens": r["context_tokens"], "note": r["note"],
+                **{k: r[k] for k in CACHE_FIELDS if k in r}}
         return Action(r["tool"], r["args"], error=r["error"], abort=r["abort"], meta=meta)
 
     def get_state(self) -> dict[str, Any]:

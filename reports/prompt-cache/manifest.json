@@ -1,0 +1,31 @@
+{
+  "batches": [
+    "cache-keep24",
+    "cache-ctx4000-keep24",
+    "cache-ctx4000-keep8"
+  ],
+  "runs": 9,
+  "splits": [
+    "dev"
+  ],
+  "eval_salt_sha256": [],
+  "seeds_sha256": "222ca6ee110834e573b99ae87533f6d0e436ec5da61bf9c78fed3f34a20404d7",
+  "dev_seeds": [
+    0,
+    1,
+    2
+  ],
+  "eval_seed_count": 0,
+  "policies": [
+    "llm:hb-qwen3-8b",
+    "llm:hb-qwen3-8b[ctx4000]",
+    "llm:hb-qwen3-8b[keep8,ctx4000]"
+  ],
+  "horizons": [
+    120
+  ],
+  "session_len": [
+    40
+  ],
+  "git_commit": "7822af1fc67c09f3453141ac55577a412fc38a3d"
+}

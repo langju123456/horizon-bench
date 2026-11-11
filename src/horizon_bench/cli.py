@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, Literal
 
+from horizon_bench import otel
 from horizon_bench.agents.llm import LLMConfig
 from horizon_bench.report import build_report
 from horizon_bench.runner import Runner, make_policy, replay
@@ -47,6 +48,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         llm = LLMConfig(base_url=args.base_url, model=args.model, max_steps=args.max_steps,
                         max_tokens_per_call=args.max_tokens_per_call, max_total_tokens=args.max_total_tokens,
                         wall_time_s=args.wall_time, context_budget_tokens=args.context_budget,
+                        keep_last_messages=args.keep_last_messages,
                         temperature=args.temperature, no_think=args.no_think).to_dict()
     prices = load_prices(args.prices)
     successes = total = 0
@@ -138,15 +140,19 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--max-total-tokens", type=int, default=d.max_total_tokens)
     r.add_argument("--wall-time", type=float, default=d.wall_time_s, help="seconds of model time per run")
     r.add_argument("--context-budget", type=int, default=d.context_budget_tokens)
+    r.add_argument("--keep-last-messages", type=int, default=d.keep_last_messages,
+                   help="messages the rolling window keeps when it trims (fewer: rarer trims, less recent context)")
     r.add_argument("--temperature", type=float, default=d.temperature)
     r.add_argument("--no-think", action="store_true",
                    help="Qwen3 only: add the /no_think switch (recorded in the run spec)")
     r.add_argument("--prices", default=None, help='JSON {"model": [usd_per_1M_in, usd_per_1M_out]}')
+    _otel_args(r)
     r.set_defaults(fn=cmd_run)
 
     s = sub.add_parser("resume", help="continue a killed run from its last checkpoint")
     s.add_argument("run_id")
     s.add_argument("--api-key", default=None)
+    _otel_args(s)
     s.set_defaults(fn=cmd_resume)
 
     s = sub.add_parser("replay", help="re-execute a run from its trace and check it reproduces")
@@ -166,9 +172,22 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _otel_args(p: argparse.ArgumentParser) -> None:
+    g = p.add_argument_group("OpenTelemetry (pip install -e '.[otel]')")
+    g.add_argument("--otel", action="store_true",
+                   help="export a trace per run over OTLP/HTTP (standard OTEL_EXPORTER_OTLP_* variables apply)")
+    g.add_argument("--otel-endpoint", default=None, help="e.g. http://localhost:4318/v1/traces (Jaeger, Phoenix)")
+    g.add_argument("--otel-console", action="store_true", help="print spans to stdout instead of exporting")
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    code: Any = args.fn(args)
+    if getattr(args, "otel", False) or getattr(args, "otel_console", False):
+        otel.configure(args.otel_endpoint, console=args.otel_console)
+    try:
+        code: Any = args.fn(args)
+    finally:
+        otel.shutdown()  # flush batched spans before exit
     return int(code)
 
 
