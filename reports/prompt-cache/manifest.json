@@ -1,9 +1,9 @@
 {
   "batches": [
     "cache-keep24",
-    "cache-keep24"
+    "cache-keep8"
   ],
-  "runs": 3,
+  "runs": 6,
   "splits": [
     "dev"
   ],
@@ -16,7 +16,8 @@
   ],
   "eval_seed_count": 0,
   "policies": [
-    "llm:hb-qwen3-8b"
+    "llm:hb-qwen3-8b",
+    "llm:hb-qwen3-8b[keep8]"
   ],
   "horizons": [
     120
@@ -24,5 +25,5 @@
   "session_len": [
     40
   ],
-  "git_commit": "3961f37a1773647dc3b9e1c174261df9b7255caf"
+  "git_commit": "2e54ec2f097d65fb39895ae98603cf53d8d1bbd3"
 }
