@@ -91,7 +91,7 @@ them. Tool JSON schemas are generated from the same pydantic models that validat
 
 ```bash
 pip install -e ".[dev]"
-pytest                      # 36 tests, ~5 s
+pytest                      # 52 tests, ~10 s
 ruff check src tests && mypy
 
 hb run --policy pid --tools rich --seeds 20 --horizon 120          # dev seeds 0..19
@@ -259,6 +259,30 @@ What the traces show (counts from the 40 runs; analysis queries over `runs/hb.sq
 - **Cost of a run.** p50 2.3–2.8 s and p95 9.2–11.9 s per model call; 123k–356k tokens per run; local, so no API cost.
   With thinking left on, a call took about 72 s and used about 965 completion tokens, which is why thinking was off.
 
+## Lever retest: context, tool feedback, control constraint
+
+The step-by-step reading of one failed run (`qwen3-8b-nothink-llm-rich-h60-eval007`) showed that "too few coolant
+adjustments" is the symptom: the model looked at a temperature only every 5 to 6 steps, called falling readings
+"within the acceptable range" as long as they were inside the band, and after the context reset at step 40
+reported 174.04 and 172.44 degC (both below the band) as normal. Three opt-in levers, each changing one layer,
+test what can fix that:
+
+| `--variant` | layer | change |
+|---|---|---|
+| `ctx_rule` | context | a three-line control procedure in the system prompt |
+| `tool_hint` | tool feedback | a fresh temperature reading also returns deviation, in-band flag, trend and a one-line hint |
+| `guard` | control constraint | the harness refuses out-of-order actions (must look, must act); its state survives a context reset |
+
+```bash
+hb run --policy llm --model qwen3:8b --tools rich --horizon 60 --seeds 10 --split eval --name retest-guard --variant guard
+python scripts/retest_sanity.py      # the levers against scripted policies on public dev seeds
+python scripts/retest_summary.py     # paired comparison against retest-base
+```
+
+The plan, the decision rule and the dev-seed checks were committed before any model run:
+[`reports/retest/PLAN.md`](reports/retest/PLAN.md). Results appear in `reports/retest/` when
+`scripts/mac_retest.sh` has run. A run without `--variant` is unchanged.
+
 ## Relation to EvidenceLoop
 
 [EvidenceLoop](https://github.com/langju123456/evidenceloop) applies the same evaluation rules to a different axis:
@@ -287,9 +311,10 @@ src/horizon_bench/
   family.py                            the Family interface used by everything below
   agents/scripted.py, agents/llm.py    pid / naive / lazy / random; OpenAI-compatible LLM agent (httpx)
   runner.py, store.py                  step loop, sessions, loop + stale detection, SQLite checkpoints, replay
+  env/reactor_guard.py                 the three opt-in levers: prompt procedure, reading fields, harness guard
   verifier.py, telemetry.py            verdicts and failure onset; JSONL traces, cost, usage
   report.py, cli.py                    hb report; the hb command
-tests/                                 36 pytest tests
+tests/                                 52 pytest tests
 reports/baseline/                      committed baseline report, charts and manifest
 ```
 
