@@ -75,9 +75,10 @@ class BaseToolBox:
                              BaseToolBox._finish)
         cls._registry = reg
 
-    def __init__(self, env: Any, mode: ToolMode) -> None:
+    def __init__(self, env: Any, mode: ToolMode, options: tuple[str, ...] | list[str] = ()) -> None:
         self.env = env
         self.mode = mode
+        self.options = frozenset(options)  # RunSpec.variants; a family decides what each one changes
         self.notes: dict[str, str] = {}
 
     # ---- registry -------------------------------------------------------------------------

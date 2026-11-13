@@ -6,6 +6,7 @@ from typing import Any
 
 from horizon_bench.agents.scripted import LazyPolicy, NaivePolicy, PIDPolicy, RandomPolicy
 from horizon_bench.env.reactor import PlantConfig, Reactor
+from horizon_bench.env.reactor_guard import VARIANTS, ReactorGuard, control_procedure
 from horizon_bench.env.reactor_tools import ReactorToolBox
 from horizon_bench.family import EpisodeEnd, Family, Judgement
 from horizon_bench.spec import RunSpec
@@ -56,6 +57,7 @@ def judge(spec: RunSpec, records: list[dict[str, Any]], env: Reactor, end: Episo
 def system_prompt(spec: RunSpec) -> str:
     c = PlantConfig()
     lo, hi = c.setpoint - c.band, c.setpoint + c.band
+    extra = control_procedure(c) if "ctx_rule" in spec.variants else ""
     return f"""You are the control-room operator of a heated chemical reactor for one shift.
 
 Time: every tool call takes one step. The shift lasts {spec.horizon} steps (0..{spec.horizon - 1}).
@@ -74,7 +76,7 @@ Instruments and actuators can fail, drift or freeze; cross-check readings when s
 
 Memory: the shift is split into sessions of {spec.session_len} steps. At each session boundary your
 conversation is erased and only notes saved with write_note survive. Keep handoff notes current.
-Act through tool calls only; a reply without a tool call wastes a step."""
+Act through tool calls only; a reply without a tool call wastes a step.""" + extra
 
 
 REACTOR = Family(
@@ -87,4 +89,6 @@ REACTOR = Family(
     policies={"pid": PIDPolicy, "naive": NaivePolicy, "lazy": LazyPolicy, "random": RandomPolicy},
     event_window=(-5, 20),
     flipflop={"set_coolant": ("pct", 15.0), "set_feed": ("rate", 0.3)},
+    variants=VARIANTS,
+    guard=lambda spec: ReactorGuard() if "guard" in spec.variants else None,
 )

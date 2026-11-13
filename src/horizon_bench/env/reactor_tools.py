@@ -1,18 +1,21 @@
 """Reactor tools. Silent failures in bare mode: a read during a TT-101 dropout returns the
-gateway's cached value as a plain number, and a command to a stuck valve returns "ok"."""
+gateway's cached value as a plain number, and a command to a stuck valve returns "ok".
+
+With the opt-in ``tool_hint`` variant a fresh temperature reading in rich mode also carries
+setpoint, deviation, in_band, trend_per_step and hint (see reactor_guard.reading_fields)."""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
 from horizon_bench.env.reactor import Reactor
-from horizon_bench.tools import Args, BaseToolBox, ToolOutcome, tool
+from horizon_bench.env.reactor_guard import TEMP_SENSORS, reading_fields
+from horizon_bench.tools import Args, BaseToolBox, ToolMode, ToolOutcome, tool
 
 SensorName = Literal["temp", "temp_backup", "pressure", "valve_position", "feed_rate"]
 EventType = Literal["feed_change", "sensor_drift", "sensor_dropout", "valve_stuck"]
-TEMP_SENSORS = ("temp", "temp_backup")
 
 
 class ReportedEvent(Args):
@@ -50,6 +53,22 @@ class ReactorToolBox(BaseToolBox):
     report_model = ShiftReport
     env: Reactor
 
+    def __init__(self, env: Any, mode: ToolMode, options: tuple[str, ...] | list[str] = ()) -> None:
+        super().__init__(env, mode, options)
+        # tool_hint only: the last fresh reading of each temperature sensor, as [value, step]. It is
+        # server-side state, so unlike the agent's context it survives a session boundary.
+        self.prev_temp: dict[str, list[float]] = {}
+
+    def to_dict(self) -> dict[str, Any]:
+        data = super().to_dict()
+        if "tool_hint" in self.options:
+            data["prev_temp"] = {k: list(v) for k, v in self.prev_temp.items()}
+        return data
+
+    def load(self, data: dict[str, Any]) -> None:
+        super().load(data)
+        self.prev_temp = {k: list(v) for k, v in data.get("prev_temp", {}).items()}
+
     def latency_ms(self) -> int:
         return self.env.sensor_latency_ms()
 
@@ -63,7 +82,12 @@ class ReactorToolBox(BaseToolBox):
         if status == "cached":
             msg = "TT-101 comm fault: serving last good value"
             return ToolOutcome(self.wrap(value, False, msg, 0.0, env.step - at, 2000), reading=reading)
-        return ToolOutcome(self.wrap(value, confidence=self._confidence(a.name)), reading=reading)
+        result = self.wrap(value, confidence=self._confidence(a.name))
+        if "tool_hint" in self.options and self.mode == "rich" and a.name in TEMP_SENSORS and value is not None:
+            prev = self.prev_temp.get(a.name)
+            result.update(reading_fields(value, at, (prev[0], int(prev[1])) if prev else None, env.cfg))
+            self.prev_temp[a.name] = [value, float(at)]
+        return ToolOutcome(result, reading=reading)
 
     def _confidence(self, sensor: str) -> float:
         """The redundancy check a DCS would run: trust TT-101 less when it disagrees with TT-102."""

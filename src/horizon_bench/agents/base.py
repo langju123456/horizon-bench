@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+AUTO_SUMMARY_NOTE = "automatic context summary"  # marks the LLM agent's own context digest (a synthetic write_note)
+
 
 @dataclass
 class Action:

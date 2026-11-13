@@ -19,7 +19,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from horizon_bench.agents.base import Action, Observation, Policy
+from horizon_bench.agents.base import AUTO_SUMMARY_NOTE, Action, Observation, Policy
 from horizon_bench.family import Family
 from horizon_bench.spec import RunSpec
 
@@ -155,7 +155,7 @@ class LLMAgent(Policy):
         self.st["actions"] += 1
         self.st["pending"] = {"id": None, "name": "write_note"}  # synthetic: no tool message follows
         return Action("write_note", {"key": SUMMARY_KEY, "text": summarize(dropped)},
-                      meta={"note": "automatic context summary"})
+                      meta={"note": AUTO_SUMMARY_NOTE})
 
     def _call_model(self) -> Action:
         st, c = self.st, self.cfg

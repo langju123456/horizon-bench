@@ -7,9 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from horizon_bench.agents.base import Policy
+from horizon_bench.agents.base import Action, Policy
 from horizon_bench.spec import RunSpec
-from horizon_bench.tools import BaseToolBox
+from horizon_bench.tools import BaseToolBox, ToolOutcome
 
 
 class Env(Protocol):
@@ -27,6 +27,19 @@ class Env(Protocol):
     def true_events(self, until: int | None = None) -> list[dict[str, Any]]: ...
     def audit_view(self) -> Any: ...  # agent-editable audit trail, for the naive-grader comparison
     def to_dict(self) -> dict[str, Any]: ...
+
+
+class StepGuard(Protocol):
+    """A harness-side constraint on the agent's next action. It sees only what the agent saw
+    (tool results), never the true state. `state` is a JSON-able dict kept in the run checkpoint."""
+
+    def check(self, action: Action, step: int, state: dict[str, Any]) -> str | None:
+        """Return None to let the action run, or the message the agent gets instead of a result."""
+        ...
+
+    def observe(self, action: Action, outcome: ToolOutcome, step: int, state: dict[str, Any]) -> None:
+        """Update `state` from an action that was executed."""
+        ...
 
 
 @dataclass
@@ -58,6 +71,8 @@ class Family:
     policies: dict[str, Callable[[RunSpec], Policy]]  # scripted policies by name
     event_window: tuple[int, int] = (-5, 20)  # reported step may be this far from the true start
     flipflop: dict[str, tuple[str, float]] = field(default_factory=dict)  # tool -> (arg, min swing)
+    variants: tuple[str, ...] = ()  # names accepted in RunSpec.variants
+    guard: Callable[[RunSpec], StepGuard | None] = lambda spec: None  # harness-side step constraint
 
 
 def get_family(name: str) -> Family:

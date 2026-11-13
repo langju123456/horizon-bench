@@ -30,7 +30,8 @@ Group = tuple[str, str, int]  # (policy label, tools, horizon)
 
 
 def policy_label(spec: RunSpec) -> str:
-    return f"llm:{(spec.llm or {}).get('model', '?')}" if spec.policy == "llm" else spec.policy
+    label = f"llm:{(spec.llm or {}).get('model', '?')}" if spec.policy == "llm" else spec.policy
+    return label + "".join(f"+{v}" for v in spec.variants)  # variants get their own rows
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from horizon_bench.agents.llm import LLMConfig
+from horizon_bench.family import get_family
 from horizon_bench.report import build_report
 from horizon_bench.runner import Runner, make_policy, replay
 from horizon_bench.spec import RunSpec, load_salt, make_run_id, salt_hash, seeds_for
@@ -27,6 +28,15 @@ def _tool_mode(text: str) -> Literal["bare", "rich"]:
     if text == "rich":
         return "rich"
     raise SystemExit(f"--tools must be bare or rich, got {text!r}")
+
+
+def _variants(text: str, family: str) -> list[str]:
+    known = get_family(family).variants
+    chosen = _csv(text)
+    unknown = [v for v in chosen if v not in known]
+    if unknown:
+        raise SystemExit(f"unknown --variant {', '.join(unknown)}; available: {', '.join(known) or 'none'}")
+    return [v for v in known if v in chosen]  # canonical order, so the same set always labels the same
 
 
 def _store(args: argparse.Namespace) -> Store:
@@ -49,6 +59,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                         wall_time_s=args.wall_time, context_budget_tokens=args.context_budget,
                         temperature=args.temperature, no_think=args.no_think).to_dict()
     prices = load_prices(args.prices)
+    variants = _variants(args.variant, args.family)
     successes = total = 0
     for policy in _csv(args.policy):
         for tools in _csv(args.tools):
@@ -59,7 +70,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                         family=args.family, policy=policy, tools=_tool_mode(tools), horizon=horizon,
                         session_len=args.session_len,
                         seed=seed, split=args.split, seed_index=i, salt_sha256=salt_hash(salt) if salt else None,
-                        llm=llm if policy == "llm" else None, prices=prices)
+                        llm=llm if policy == "llm" else None, prices=prices, variants=variants)
                     status = store.status(spec.run_id)
                     if status == "done" and not args.overwrite:
                         print(f"skip {spec.run_id}: done (use --overwrite to run it again)")
@@ -128,6 +139,10 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--name", default="default", help="batch name, used by `hb report`")
     r.add_argument("--family", default="reactor")
     r.add_argument("--session-len", type=int, default=40)
+    r.add_argument("--variant", default="",
+                   help="comma list of opt-in levers recorded in the run spec: ctx_rule (control procedure in "
+                        "the prompt), tool_hint (deviation/trend/hint in temperature readings), guard "
+                        "(the harness refuses out-of-order actions)")
     r.add_argument("--overwrite", action="store_true")
     d = LLMConfig()
     r.add_argument("--model", default=d.model)

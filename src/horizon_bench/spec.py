@@ -34,6 +34,7 @@ class RunSpec(BaseModel):
     salt_sha256: str | None = None  # eval split only: proves which salt derived the seed
     stale_after: int = 3  # a decision based on information older than this many steps is stale
     llm: dict[str, Any] | None = None  # LLMConfig without the api key
+    variants: list[str] = []  # opt-in changes to prompt, tool returns or harness (see Family.variants)
     prices: dict[str, list[float]] = {}  # model -> [USD per 1M input tokens, USD per 1M output tokens]
 
 

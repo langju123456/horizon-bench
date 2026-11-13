@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from horizon_bench.agents.base import Action, Observation, Policy
-from horizon_bench.family import EpisodeEnd, Family, get_family
+from horizon_bench.family import EpisodeEnd, Family, StepGuard, get_family
 from horizon_bench.spec import RunSpec
 from horizon_bench.store import Store
 from horizon_bench.telemetry import FLAGS, TraceWriter, cost_usd
@@ -70,6 +70,7 @@ class RunState:
     finish_step: int | None = None
     report: dict[str, Any] | None = None
     audit_at_finish: Any = None
+    guard: dict[str, Any] = field(default_factory=dict)  # StepGuard state (empty when no guard is active)
 
 
 def make_policy(spec: RunSpec, transport: Any = None, api_key: str | None = None) -> Policy:
@@ -93,8 +94,8 @@ class Runner:
         family = get_family(spec.family)
         self.store.create_run(spec, overwrite=overwrite)
         env = family.make_env(spec.seed, spec.horizon)
-        return self._loop(spec, family, env, family.toolbox(env, spec.tools), policy or make_policy(spec),
-                          RunState(), crash_after)
+        return self._loop(spec, family, env, family.toolbox(env, spec.tools, spec.variants),
+                          policy or make_policy(spec), RunState(), crash_after)
 
     def resume(self, run_id: str, policy: Policy | None = None, crash_after: int | None = None) -> dict[str, Any]:
         spec = self.store.spec(run_id)
@@ -105,9 +106,10 @@ class Runner:
         cp = self.store.checkpoint(run_id)
         if cp is None:  # killed before the first step was saved
             env = family.make_env(spec.seed, spec.horizon)
-            return self._loop(spec, family, env, family.toolbox(env, spec.tools), policy, RunState(), crash_after)
+            return self._loop(spec, family, env, family.toolbox(env, spec.tools, spec.variants), policy,
+                              RunState(), crash_after)
         env = family.load_env(cp["env"])
-        toolbox = family.toolbox(env, spec.tools)
+        toolbox = family.toolbox(env, spec.tools, spec.variants)
         toolbox.load(cp["tools"])
         policy.set_state(cp["policy"])
         return self._loop(spec, family, env, toolbox, policy, RunState(**cp["run"]), crash_after)
@@ -120,8 +122,9 @@ class Runner:
             trace = TraceWriter(self.runs_dir / spec.run_id / "trace.jsonl", self.store.records(spec.run_id))
         kill_at = int(os.environ[KILL_ENV]) if os.environ.get(KILL_ENV) else None
         loop = LoopDetector(family.flipflop, st.loop)
+        guard = family.guard(spec)
         while env.step < spec.horizon and not env.terminated:
-            record = self._step(spec, env, toolbox, policy, st, loop)
+            record = self._step(spec, env, toolbox, policy, st, loop, guard)
             env.advance()
             st.loop = loop.state
             checkpoint = {"env": env.to_dict(), "tools": toolbox.to_dict(), "policy": policy.get_state(),
@@ -143,12 +146,14 @@ class Runner:
         return verdict
 
     def _step(self, spec: RunSpec, env: Any, toolbox: BaseToolBox, policy: Policy, st: RunState,
-              loop: LoopDetector) -> dict[str, Any]:
+              loop: LoopDetector, guard: StepGuard | None = None) -> dict[str, Any]:
         t = env.step
         session = t // spec.session_len
         rec: dict[str, Any] = {
             "step": t, "session": session, "agent_active": st.agent_active, "tool": None, "args": None,
-            "error": None, "abort": None, "result": None, "flags": dict.fromkeys(FLAGS, False),
+            "error": None, "abort": None, "result": None,
+            # "guard_blocked" exists only in runs that have a guard, so runs without one keep their record shape
+            "flags": dict.fromkeys(FLAGS if guard is None else (*FLAGS, "guard_blocked"), False),
             "decision": False, "basis_age": None, "invalid_streak": 0, "llm_call": False,
             "prompt_tokens": 0, "completion_tokens": 0, "llm_latency_ms": 0.0, "context_tokens": 0,
             "cost_usd": 0.0, "note": None, "truth": env.truth(),
@@ -173,14 +178,29 @@ class Runner:
             return rec
 
         rec.update(tool=action.tool, args=action.args, error=action.error)
+        flags = rec["flags"]
+        refusal = None
+        if guard is not None and not action.error:
+            refusal = guard.check(action, t, st.guard)
         if action.error:
             out = toolbox.invalid(action.error)
+        elif refusal is not None:
+            # The action is not executed and the step still passes. A refusal is reported in the tool's
+            # error format but is not a malformed call, so it does not count toward the invalid streak.
+            flags["guard_blocked"] = True
+            if action.tool is None:
+                out = ToolOutcome(None)
+                st.warnings.append(refusal)
+            else:
+                out = toolbox.invalid(refusal)
+                out.invalid_args = False
         elif action.tool is None:
             out = ToolOutcome(None)
         else:
             out = toolbox.execute(action.tool, action.args)
+            if guard is not None:
+                guard.observe(action, out, t, st.guard)
         rec["result"] = st.last_result = out.result
-        flags = rec["flags"]
         flags["invalid_args"], flags["loophole_used"] = out.invalid_args, out.loophole
         st.invalid_streak = st.invalid_streak + 1 if out.invalid_args else 0
         rec["invalid_streak"] = st.invalid_streak
