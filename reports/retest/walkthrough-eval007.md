@@ -136,6 +136,73 @@ One step is one tool call. `what the agent got back` is the tool result exactly 
 | 58 | 1 | (text only) |  | 168.4 | 50 | feed_change | said: The reactor is operating within normal parameters at step 57. Temperature is 174.58°C (primary sensor) and 169.75°C (bac |
 | 59 | 1 | read_sensor(temp) | 168.14 | 168.3 | 50 | feed_change |  |
 
+### context: control procedure in the prompt
+
+`retest-ctx-llm-rich-h60-eval007` · variants: ctx_rule · control kept: no, onset at step 35 · time in band 0.58 · true events: sensor_dropout@7, feed_change@18, sensor_drift@37
+
+| step | session | call | what the agent got back | true T | true valve % | active disturbances | note |
+|---|---|---|---|---|---|---|---|
+| 0 | 0 | read_sensor(temp) | 180.11 | 180.0 | 50 | - |  |
+| 1 | 0 | read_sensor(pressure) | 2.003 | 179.9 | 50 | - |  |
+| 2 | 0 | read_sensor(valve_position) | 50.09 | 179.8 | 50 | - |  |
+| 3 | 0 | read_sensor(feed_rate) | 0.994 | 179.8 | 50 | - |  |
+| 4 | 0 | read_sensor(temp_backup) | 179.81; conf 0.8 | 179.9 | 50 | - |  |
+| 5 | 0 | set_coolant(50) | 50.0 | 180.0 | 50 | - |  |
+| 6 | 0 | read_sensor(temp) | 180.38 | 180.0 | 50 | - |  |
+| 7 | 0 | read_sensor(temp_backup) | 179.47; conf 0.8 | 180.0 | 50 | sensor_dropout |  |
+| 8 | 0 | (text only) |  | 180.3 | 50 | sensor_dropout |  |
+| 9 | 0 | (text only) |  | 180.1 | 50 | sensor_dropout |  |
+| 10 | 0 | read_sensor(temp) | ERROR TT-101 comm fault: serving last good value | 180.4 | 50 | sensor_dropout |  |
+| 11 | 0 | read_sensor(temp_backup) | 179.95; conf 0.8 | 180.3 | 50 | sensor_dropout |  |
+| 12 | 0 | ack_alarm(TT-101) | ERROR no active alarm with id 'TT-101' | 180.4 | 50 | sensor_dropout | invalid |
+| 13 | 0 | get_alarms() | [{"id": "A1", "code": "TT101_COMM_FAULT", "raised_step": 9,  | 180.3 | 50 | sensor_dropout |  |
+| 14 | 0 | ack_alarm(A1) | "A1" | 180.4 | 50 | sensor_dropout |  |
+| 15 | 0 | set_coolant(50) | 50.0 | 180.4 | 50 | sensor_dropout | stale basis |
+| 16 | 0 | read_sensor(temp) | ERROR TT-101 comm fault: serving last good value | 180.5 | 50 | sensor_dropout |  |
+| 17 | 0 | read_sensor(temp_backup) | 181.03; conf 0.8 | 180.5 | 50 | sensor_dropout |  |
+| 18 | 0 | set_coolant(50) | 50.0 | 180.3 | 50 | feed_change |  |
+| 19 | 0 | read_sensor(temp) | 180.04 | 179.9 | 50 | feed_change |  |
+| 20 | 0 | read_sensor(temp_backup) | 179.31; conf 0.8 | 179.5 | 50 | feed_change |  |
+| 21 | 0 | set_coolant(50) | 50.0 | 179.1 | 50 | feed_change |  |
+| 22 | 0 | read_sensor(temp) | 178.7 | 178.7 | 50 | feed_change |  |
+| 23 | 0 | set_coolant(50) | 50.0 | 178.4 | 50 | feed_change |  |
+| 24 | 0 | read_sensor(temp) | 178.25 | 178.1 | 50 | feed_change |  |
+| 25 | 0 | set_coolant(50) | 50.0 | 177.7 | 50 | feed_change |  |
+| 26 | 0 | read_sensor(temp) | 177.61 | 177.4 | 50 | feed_change |  |
+| 27 | 0 | set_coolant(50) | 50.0 | 176.8 | 50 | feed_change |  |
+| 28 | 0 | read_sensor(temp) | 176.71; conf 0.91 | 176.5 | 50 | feed_change |  |
+| 29 | 0 | set_coolant(50) | 50.0 | 176.3 | 50 | feed_change |  |
+| 30 | 0 | read_sensor(temp) | 176.04 | 176.1 | 50 | feed_change |  |
+| 31 | 0 | set_coolant(50) | 50.0 | 175.9 | 50 | feed_change |  |
+| 32 | 0 | read_sensor(temp) | 175.6 | 175.5 | 50 | feed_change |  |
+| 33 | 0 | set_coolant(50) | 50.0 | 175.3 | 50 | feed_change |  |
+| 34 | 0 | read_sensor(temp) | 174.88 | 175.1 | 50 | feed_change |  |
+| 35 | 0 | set_coolant(50) | 50.0 | 174.7 | 50 | feed_change |  |
+| 36 | 0 | read_sensor(temp) | 173.76; conf 0.99 | 174.4 | 50 | feed_change |  |
+| 37 | 0 | set_coolant(50) | 50.0 | 174.1 | 50 | feed_change, sensor_drift |  |
+| 38 | 0 | read_sensor(temp) | 174.4; conf 0.86 | 173.6 | 50 | feed_change, sensor_drift |  |
+| 39 | 0 | set_coolant(50) | 50.0 | 173.2 | 50 | feed_change, sensor_drift |  |
+| 40 | 1 | read_notes() | {} | 172.8 | 50 | feed_change, sensor_drift |  |
+| 41 | 1 | read_sensor(temp) | 174.04; conf 0.91 | 172.6 | 50 | feed_change, sensor_drift |  |
+| 42 | 1 | read_sensor(pressure) | 1.732 | 172.1 | 50 | feed_change, sensor_drift |  |
+| 43 | 1 | read_sensor(valve_position) | 49.91 | 171.7 | 50 | feed_change, sensor_drift |  |
+| 44 | 1 | read_sensor(feed_rate) | 0.997 | 171.5 | 50 | feed_change, sensor_drift |  |
+| 45 | 1 | read_sensor(temp_backup) | 171.07; conf 0.8 | 171.1 | 50 | feed_change, sensor_drift |  |
+| 46 | 1 | set_coolant(50) | 50.0 | 170.9 | 50 | feed_change, sensor_drift |  |
+| 47 | 1 | read_sensor(temp) | 173.7; conf 0.46 | 170.6 | 50 | feed_change, sensor_drift |  |
+| 48 | 1 | read_sensor(temp_backup) | 171.04; conf 0.8 | 170.5 | 50 | feed_change, sensor_drift |  |
+| 49 | 1 | read_sensor(temp) | 173.81; conf 0.44 | 170.2 | 50 | feed_change, sensor_drift |  |
+| 50 | 1 | read_sensor(temp_backup) | 169.4; conf 0.8 | 170.1 | 50 | feed_change, sensor_drift |  |
+| 51 | 1 | read_sensor(temp) | 174.09; conf 0.31 | 169.8 | 50 | feed_change, sensor_drift |  |
+| 52 | 1 | read_sensor(temp_backup) | 169.77; conf 0.8 | 169.7 | 50 | feed_change, sensor_drift |  |
+| 53 | 1 | read_sensor(temp) | 174.58; conf 0.1 | 169.5 | 50 | feed_change, sensor_drift |  |
+| 54 | 1 | read_sensor(temp_backup) | 169.75; conf 0.8 | 169.2 | 50 | feed_change, sensor_drift |  |
+| 55 | 1 | read_sensor(temp) | 173.86; conf 0.1 | 169.0 | 50 | feed_change, sensor_drift |  |
+| 56 | 1 | read_sensor(temp_backup) | 168.45; conf 0.8 | 168.9 | 50 | feed_change |  |
+| 57 | 1 | read_sensor(temp) | 168.56 | 168.7 | 50 | feed_change |  |
+| 58 | 1 | read_sensor(temp_backup) | 169.63; conf 0.8 | 168.4 | 50 | feed_change |  |
+| 59 | 1 | read_sensor(temp) | 168.14 | 168.3 | 50 | feed_change |  |
+
 ### tool feedback: deviation / trend / hint in readings
 
 `retest-tool-llm-rich-h60-eval007` · variants: tool_hint · control kept: yes · time in band 0.93 · true events: sensor_dropout@7, feed_change@18, sensor_drift@37

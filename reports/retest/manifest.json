@@ -6,7 +6,7 @@
     "retest-ctx",
     "retest-all"
   ],
-  "runs": 30,
+  "runs": 40,
   "splits": [
     "eval"
   ],
@@ -18,6 +18,7 @@
   "eval_seed_count": 10,
   "policies": [
     "llm:hb-qwen3-8b",
+    "llm:hb-qwen3-8b+ctx_rule",
     "llm:hb-qwen3-8b+guard",
     "llm:hb-qwen3-8b+tool_hint"
   ],
@@ -27,5 +28,5 @@
   "session_len": [
     40
   ],
-  "git_commit": "bdb0cbf641425672d45a08a50ade30da2e494366"
+  "git_commit": "b07ab7783a99e1569c7d3a34dbfe2b724c393c70"
 }
