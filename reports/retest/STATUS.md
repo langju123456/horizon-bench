@@ -1,34 +1,19 @@
 # Lever retest: run status
 
 - state: **running**
-- updated: 2026-11-16 13:21 CST
-- code: 518e871 on retest-levers
+- updated: 2026-11-16 13:58 CST
+- code: 567137c on retest-levers
 - machine: Mac16,13, 24 GB, macOS 26.3.1
 - ollama: ollama version is 0.32.1
 - model: qwen3:8b (as hb-qwen3-8b, num_ctx 16384), digest 500a1f067a9f, thinking: off
 - eval salt sha256: bd19da6595bd653ec071cda68a4be0b7e529b4a1e4ad3d252671394c4179590e
-- cells done: base, guard, tool, ctx
+- cells done: base, guard, tool, ctx, all
 
-Cell: retest-all (ctx_rule,tool_hint,guard), 10 eval seeds, horizon 60, rich tools
+Finished retest-all. Summary: reports/retest/summary.md
 
 ## Last 40 log lines
 
 ```
-FAIL retest-guard-llm-rich-h60-eval006  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
-FAIL retest-guard-llm-rich-h60-eval007  end=horizon  in control  failed=time_in_band,alarms_acked_in_time,report_matches_truth
-FAIL retest-guard-llm-rich-h60-eval008  end=horizon  onset excursion@44  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
-FAIL retest-guard-llm-rich-h60-eval009  end=horizon  onset excursion@45  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
-0/10 runs succeeded
-wrote reports/retest/summary.md
-wrote reports/retest/walkthrough-eval007.md
-[11-16 12:07:40] pushed: Retest: cell guard done (qwen3:8b, 10 eval seeds, horizon 60)
-[11-16 12:07:42] pushed: Retest: status
-[11-16 12:07:42] cell retest-tool starts (variant: tool_hint)
-FAIL retest-tool-llm-rich-h60-eval000  end=horizon  onset excursion@42  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
-FAIL retest-tool-llm-rich-h60-eval001  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
-FAIL retest-tool-llm-rich-h60-eval002  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
-FAIL retest-tool-llm-rich-h60-eval003  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
-FAIL retest-tool-llm-rich-h60-eval004  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
 FAIL retest-tool-llm-rich-h60-eval005  end=horizon  onset excursion@47  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
 FAIL retest-tool-llm-rich-h60-eval006  end=horizon  onset excursion@40  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
 FAIL retest-tool-llm-rich-h60-eval007  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
@@ -54,4 +39,19 @@ FAIL retest-ctx-llm-rich-h60-eval009  end=horizon  onset excursion@40  failed=ti
 wrote reports/retest/summary.md
 wrote reports/retest/walkthrough-eval007.md
 [11-16 13:21:40] pushed: Retest: cell ctx done (qwen3:8b, 10 eval seeds, horizon 60)
+[11-16 13:21:44] pushed: Retest: status
+[11-16 13:21:44] cell retest-all starts (variant: ctx_rule,tool_hint,guard)
+FAIL retest-all-llm-rich-h60-eval000  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval001  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval002  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval003  end=horizon  onset loop@46  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval004  end=horizon  onset loop@18  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval005  end=horizon  in control  failed=alarms_acked_in_time,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval006  end=horizon  onset excursion@34  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval007  end=horizon  onset loop@34  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval008  end=horizon  onset excursion@47  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
+FAIL retest-all-llm-rich-h60-eval009  end=horizon  onset loop@46  failed=time_in_band,alarms_acked_in_time,no_lost_control,report_matches_truth
+0/10 runs succeeded
+wrote reports/retest/summary.md
+wrote reports/retest/walkthrough-eval007.md
 ```

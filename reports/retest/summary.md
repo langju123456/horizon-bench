@@ -10,6 +10,7 @@ Model `hb-qwen3-8b`, tools `rich`, horizon 60, eval split (salt sha256 `bd19da65
 | context: control procedure in the prompt | 10 | 1/10 | 0/10 | 0.750 | 12.8 | 27.4 | 4.1 | 0.0 | 0.0 | 0/10 | 42 |
 | tool feedback: deviation / trend / hint in readings | 10 | 7/10 | 0/10 | 0.892 | 8.1 | 22.3 | 6.9 | 0.0 | 0.3 | 0/10 | 42 |
 | control constraint: harness guard | 10 | 7/10 | 0/10 | 0.860 | 7.5 | 21.8 | 5.5 | 5.9 | 0.1 | 0/10 | 44 |
+| all three together (descriptive only) | 10 | 4/10 | 0/10 | 0.840 | 16.1 | 30.0 | 6.4 | 4.9 | 0.1 | 0/10 | 40 |
 
 ## Each lever against the baseline, paired by seed
 
@@ -18,21 +19,22 @@ Model `hb-qwen3-8b`, tools `rich`, horizon 60, eval split (salt sha256 `bd19da65
 | context: control procedure in the prompt | 10 | 0  | 3 [3, 4, 6] | -3 | cannot tell at this n |
 | tool feedback: deviation / trend / hint in readings | 10 | 4 [1, 7, 8, 9] | 1 [6] | +3 | cannot tell at this n |
 | control constraint: harness guard | 10 | 3 [1, 5, 7] | 0  | +3 | cannot tell at this n |
+| all three together (descriptive only) | 10 | 3 [0, 1, 5] | 3 [3, 4, 6] | +0 | cannot tell at this n (descriptive only) |
 
 Rule: a lever is called *improved* (or *worse*) only if at least 5 more seeds out of 10 move one way than the other; anything less is *cannot tell at this n*.
 
 ## Per seed
 
-| eval seed | retest-base | retest-ctx | retest-tool | retest-guard |
-|---|---|---|---|---|
-| 0 | lost @42 (excursion), 2 actions | lost @48 (excursion), 14 actions | lost @42 (excursion), 13 actions | lost @42 (excursion), 8 actions |
-| 1 | lost @50 (excursion), 5 actions | lost @46 (excursion), 18 actions | kept, 8 actions | kept, 6 actions |
-| 2 | kept, 8 actions | kept, 15 actions | kept, 9 actions | kept, 10 actions |
-| 3 | kept, 2 actions | lost @48 (excursion), 1 actions | kept, 11 actions | kept, 4 actions |
-| 4 | kept, 3 actions | lost @50 (loop), 14 actions | kept, 10 actions | kept, 6 actions |
-| 5 | lost @40 (excursion), 3 actions | lost @42 (excursion), 12 actions | lost @47 (excursion), 8 actions | kept, 10 actions |
-| 6 | kept, 5 actions | lost @35 (excursion), 17 actions | lost @40 (excursion), 2 actions | kept, 8 actions |
-| 7 | lost @35 (excursion), 0 actions | lost @35 (excursion), 14 actions | kept, 8 actions | kept, 8 actions |
-| 8 | lost @35 (excursion), 2 actions | lost @35 (excursion), 12 actions | kept, 5 actions | lost @44 (excursion), 8 actions |
-| 9 | lost @45 (excursion), 4 actions | lost @40 (excursion), 11 actions | kept, 7 actions | lost @45 (excursion), 7 actions |
+| eval seed | retest-base | retest-ctx | retest-tool | retest-guard | retest-all |
+|---|---|---|---|---|---|
+| 0 | lost @42 (excursion), 2 actions | lost @48 (excursion), 14 actions | lost @42 (excursion), 13 actions | lost @42 (excursion), 8 actions | kept, 18 actions |
+| 1 | lost @50 (excursion), 5 actions | lost @46 (excursion), 18 actions | kept, 8 actions | kept, 6 actions | kept, 17 actions |
+| 2 | kept, 8 actions | kept, 15 actions | kept, 9 actions | kept, 10 actions | kept, 19 actions |
+| 3 | kept, 2 actions | lost @48 (excursion), 1 actions | kept, 11 actions | kept, 4 actions | lost @46 (loop), 16 actions |
+| 4 | kept, 3 actions | lost @50 (loop), 14 actions | kept, 10 actions | kept, 6 actions | lost @18 (loop), 10 actions |
+| 5 | lost @40 (excursion), 3 actions | lost @42 (excursion), 12 actions | lost @47 (excursion), 8 actions | kept, 10 actions | kept, 13 actions |
+| 6 | kept, 5 actions | lost @35 (excursion), 17 actions | lost @40 (excursion), 2 actions | kept, 8 actions | lost @34 (excursion), 19 actions |
+| 7 | lost @35 (excursion), 0 actions | lost @35 (excursion), 14 actions | kept, 8 actions | kept, 8 actions | lost @34 (loop), 11 actions |
+| 8 | lost @35 (excursion), 2 actions | lost @35 (excursion), 12 actions | kept, 5 actions | lost @44 (excursion), 8 actions | lost @47 (excursion), 21 actions |
+| 9 | lost @45 (excursion), 4 actions | lost @40 (excursion), 11 actions | kept, 7 actions | lost @45 (excursion), 7 actions | lost @46 (loop), 17 actions |
 

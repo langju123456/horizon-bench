@@ -337,3 +337,70 @@ One step is one tool call. `what the agent got back` is the tool result exactly 
 | 58 | 1 | read_sensor(pressure) | ERROR CONTROL REQUIRED: the last temperature reading (174.34 degC at step 57) is 5.7 degC below the setpoint and no  | 174.2 | 41 | feed_change | REFUSED by guard |
 | 59 | 1 | set_coolant(30) | 40.8 | 174.5 | 41 | feed_change |  |
 
+### all three together (descriptive only)
+
+`retest-all-llm-rich-h60-eval007` · variants: ctx_rule, tool_hint, guard · control kept: no, onset at step 34 · time in band 0.78 · true events: sensor_dropout@7, feed_change@18, sensor_drift@37
+
+| step | session | call | what the agent got back | true T | true valve % | active disturbances | note |
+|---|---|---|---|---|---|---|---|
+| 0 | 0 | read_sensor(temp) | 180.11; dev +0.11 | 180.0 | 50 | - |  |
+| 1 | 0 | read_sensor(pressure) | 2.003 | 179.9 | 50 | - |  |
+| 2 | 0 | read_sensor(valve_position) | 50.09 | 179.8 | 50 | - |  |
+| 3 | 0 | read_sensor(feed_rate) | 0.994 | 179.8 | 50 | - |  |
+| 4 | 0 | read_sensor(temp_backup) | 179.81; conf 0.8; dev -0.19 | 179.9 | 50 | - |  |
+| 5 | 0 | (text only) |  | 180.0 | 50 | - | said: The reactor is operating within the desired temperature range (175-185 degC) with a setpoint of 180 degC. The temperatur |
+| 6 | 0 | read_sensor(temp) | 180.38; dev +0.38; trend +0.04 | 180.0 | 50 | - |  |
+| 7 | 0 | read_sensor(temp_backup) | 179.47; conf 0.8; dev -0.53; trend -0.11 | 180.0 | 50 | sensor_dropout |  |
+| 8 | 0 | (text only) |  | 180.3 | 50 | sensor_dropout |  |
+| 9 | 0 | read_sensor(temp) | ERROR TT-101 comm fault: serving last good value | 180.1 | 50 | sensor_dropout |  |
+| 10 | 0 | (text only) |  | 180.4 | 50 | sensor_dropout | said: The primary temperature sensor (TT-101) has failed, and the system is now serving the last good value. I will check the  |
+| 11 | 0 | read_sensor(temp_backup) | 179.95; conf 0.8; dev -0.05; trend +0.12 | 180.3 | 50 | sensor_dropout |  |
+| 12 | 0 | get_alarms() | [{"id": "A1", "code": "TT101_COMM_FAULT", "raised_step": 9,  | 180.4 | 50 | sensor_dropout |  |
+| 13 | 0 | ack_alarm(A1) | "A1" | 180.3 | 50 | sensor_dropout |  |
+| 14 | 0 | (text only) |  | 180.4 | 50 | sensor_dropout |  |
+| 15 | 0 | read_sensor(temp) | ERROR TT-101 comm fault: serving last good value | 180.4 | 50 | sensor_dropout |  |
+| 16 | 0 | read_sensor(temp_backup) | 180.29; conf 0.8; dev +0.29; trend +0.07 | 180.5 | 50 | sensor_dropout |  |
+| 17 | 0 | (text only) |  | 180.5 | 50 | sensor_dropout |  |
+| 18 | 0 | read_sensor(temp) | 180.63; dev +0.63; trend +0.02 | 180.3 | 50 | feed_change |  |
+| 19 | 0 | read_sensor(temp_backup) | 179.98; conf 0.8; dev -0.02; trend -0.10 | 179.9 | 50 | feed_change |  |
+| 20 | 0 | (text only) |  | 179.5 | 50 | feed_change |  |
+| 21 | 0 | read_sensor(temp) | 179.14; dev -0.86; trend -0.50 | 179.1 | 50 | feed_change |  |
+| 22 | 0 | read_sensor(temp_backup) | 178.52; conf 0.8; dev -1.48; trend -0.49 | 178.7 | 50 | feed_change |  |
+| 23 | 0 | (text only) |  | 178.4 | 50 | feed_change |  |
+| 24 | 0 | read_sensor(temp) | 178.25; dev -1.75; trend -0.30; hint: reading is 1.8 degC below setpoint and still falling: reduce cooling n | 178.1 | 50 | feed_change |  |
+| 25 | 0 | set_coolant(40) | 50.0 | 177.7 | 50 | feed_change |  |
+| 26 | 0 | read_sensor(temp) | 177.71; dev -2.29; trend -0.27; hint: reading is 2.3 degC below setpoint: reduce cooling now (set_coolant wi | 177.5 | 46 | feed_change |  |
+| 27 | 0 | set_coolant(30) | 43.6 | 177.1 | 44 | feed_change |  |
+| 28 | 0 | read_sensor(temp) | 177.42; conf 0.9; dev -2.58; trend -0.15; hint: reading is 2.6 degC below setpoint: reduce cooling now (set_coolant wi | 177.2 | 38 | feed_change |  |
+| 29 | 0 | set_coolant(25) | 34.9 | 177.6 | 35 | feed_change |  |
+| 30 | 0 | read_sensor(temp) | 178.04; dev -1.96; trend +0.31; hint: reading is 2.0 degC below setpoint but moving back toward it: keep the | 178.1 | 31 | feed_change |  |
+| 31 | 0 | read_sensor(temp) | 178.56; conf 0.98; dev -1.44; trend +0.52 | 178.7 | 29 | feed_change |  |
+| 32 | 0 | read_sensor(temp) | 179.34; dev -0.66; trend +0.78 | 179.3 | 27 | feed_change |  |
+| 33 | 0 | read_sensor(temp) | 180.23; dev +0.23; trend +0.89 | 180.0 | 26 | feed_change |  |
+| 34 | 0 | read_sensor(temp) | 180.55; dev +0.55; trend +0.32 | 180.8 | 26 | feed_change |  |
+| 35 | 0 | read_sensor(temp_backup) | ERROR timeout after 2000 ms | 181.4 | 25 | feed_change |  |
+| 36 | 0 | read_sensor(temp) | 181.41; conf 0.98; dev +1.41; trend +0.43 | 182.0 | 25 | feed_change |  |
+| 37 | 0 | read_sensor(temp_backup) | 183.36; conf 0.8; dev +3.36; trend +0.32; hint: reading is 3.4 degC above setpoint and still rising: add cooling now ( | 182.8 | 25 | feed_change, sensor_drift |  |
+| 38 | 0 | set_coolant(70) | 25.1 | 183.3 | 25 | feed_change, sensor_drift |  |
+| 39 | 0 | read_sensor(temp) | 184.27; dev +4.27; trend +0.95; hint: reading is 4.3 degC above setpoint and still rising: add cooling now ( | 183.4 | 43 | feed_change, sensor_drift |  |
+| 40 | 1 | read_notes() | ERROR CONTROL REQUIRED: the last temperature reading (184.27 degC at step 39) is 4.3 degC above the setpoint and no  | 183.0 | 54 | feed_change, sensor_drift | REFUSED by guard |
+| 41 | 1 | (text only) |  | 182.4 | 60 | feed_change, sensor_drift | REFUSED by guard |
+| 42 | 1 | set_coolant(80) | 64.2 | 181.2 | 64 | feed_change, sensor_drift |  |
+| 43 | 1 | read_sensor(temp) | 181.95; conf 0.96; dev +1.95; trend -0.58; hint: reading is 1.9 degC above setpoint but moving back toward it: keep the | 179.9 | 71 | feed_change, sensor_drift |  |
+| 44 | 1 | read_sensor(temp) | 180.92; conf 0.53; dev +0.92; trend -1.03 | 178.7 | 74 | feed_change, sensor_drift |  |
+| 45 | 1 | read_sensor(temp) | 179.98; conf 0.55; dev -0.02; trend -0.94 | 177.2 | 77 | feed_change, sensor_drift |  |
+| 46 | 1 | read_sensor(temp) | ERROR CONTROL REQUIRED: the last temperature reading (181.95 degC at step 43) is 1.9 degC above the setpoint and no  | 175.9 | 78 | feed_change, sensor_drift | REFUSED by guard |
+| 47 | 1 | set_coolant(85) | 78.8 | 174.4 | 79 | feed_change, sensor_drift |  |
+| 48 | 1 | read_sensor(temp) | 176.74; conf 0.45; dev -3.26; trend -1.08; hint: reading is 3.3 degC below setpoint and still falling: reduce cooling n | 173.0 | 81 | feed_change, sensor_drift |  |
+| 49 | 1 | set_coolant(70) | 82.8 | 171.4 | 83 | feed_change, sensor_drift |  |
+| 50 | 1 | read_sensor(temp) | 174.11; conf 0.1; dev -5.89; trend -1.31; hint: reading is 5.9 degC below setpoint and still falling: reduce cooling n | 170.1 | 78 | feed_change, sensor_drift |  |
+| 51 | 1 | set_coolant(60) | ERROR TEMPERATURE READING REQUIRED: the reactor temperature was last read 8 steps ago. Call read_sensor with name te | 168.7 | 75 | feed_change, sensor_drift | REFUSED by guard |
+| 52 | 1 | read_sensor(temp_backup) | 167.86; conf 0.8; dev -12.14; trend -1.03; hint: reading is 12.1 degC below setpoint and still falling: reduce cooling  | 167.8 | 73 | feed_change, sensor_drift |  |
+| 53 | 1 | set_coolant(50) | 71.6 | 166.8 | 72 | feed_change, sensor_drift |  |
+| 54 | 1 | read_sensor(temp) | 170.88; conf 0.13; dev -9.12; trend -0.81; hint: reading is 9.1 degC below setpoint and still falling: reduce cooling n | 165.8 | 63 | feed_change, sensor_drift |  |
+| 55 | 1 | set_coolant(45) | 57.8 | 165.3 | 58 | feed_change, sensor_drift |  |
+| 56 | 1 | read_sensor(temp) | 165.22; dev -14.78; trend -2.83; hint: reading is 14.8 degC below setpoint and still falling: reduce cooling  | 165.1 | 53 | feed_change |  |
+| 57 | 1 | set_coolant(40) | 49.6 | 164.9 | 50 | feed_change |  |
+| 58 | 1 | read_sensor(temp) | 164.68; conf 0.94; dev -15.32; trend -0.27; hint: reading is 15.3 degC below setpoint: reduce cooling now (set_coolant w | 164.7 | 46 | feed_change |  |
+| 59 | 1 | set_coolant(35) | 43.4 | 164.8 | 43 | feed_change |  |
+
