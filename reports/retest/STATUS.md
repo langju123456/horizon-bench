@@ -2,19 +2,18 @@
 
 - state: **running**
 - updated: 2026-11-16 12:07 CST
-- code: 67689f2 on retest-levers
+- code: 70de3cb on retest-levers
 - machine: Mac16,13, 24 GB, macOS 26.3.1
 - ollama: ollama version is 0.32.1
 - model: qwen3:8b (as hb-qwen3-8b, num_ctx 16384), digest 500a1f067a9f, thinking: off
 - eval salt sha256: bd19da6595bd653ec071cda68a4be0b7e529b4a1e4ad3d252671394c4179590e
 - cells done: base, guard
 
-Finished retest-guard. Summary: reports/retest/summary.md
+Cell: retest-tool (tool_hint), 10 eval seeds, horizon 60, rich tools
 
 ## Last 40 log lines
 
 ```
-  
           See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
           ********************************************************************************
   
@@ -54,4 +53,5 @@ FAIL retest-guard-llm-rich-h60-eval009  end=horizon  onset excursion@45  failed=
 0/10 runs succeeded
 wrote reports/retest/summary.md
 wrote reports/retest/walkthrough-eval007.md
+[11-16 12:07:40] pushed: Retest: cell guard done (qwen3:8b, 10 eval seeds, horizon 60)
 ```
