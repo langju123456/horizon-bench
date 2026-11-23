@@ -1,0 +1,36 @@
+{
+  "strategy": "wait_for_human",
+  "fault": "ack",
+  "process_exit": 0,
+  "recovery_exit": 0,
+  "process_measured": false,
+  "infrastructure_ok": true,
+  "accepted": true,
+  "target_receipts": 1,
+  "local_status": "completed",
+  "success": true,
+  "reason": "one_valid_receipt_and_local_completed",
+  "inbox": [
+    {
+      "idem_key": "delivery-001",
+      "task_id": "catl-fy2025-cfo-receipt",
+      "payload": {
+        "annual_thousand_cny": 133219982,
+        "company": "宁德时代",
+        "fiscal_year": 2025,
+        "metric": "经营活动产生的现金流量净额",
+        "q4_thousand_cny": 52559552,
+        "source_pages": [
+          11,
+          12
+        ]
+      },
+      "version": "catl-fy2025-cfo-v1",
+      "digest": "eedd9faa939cdcf6d469a3ed784890f381d96abf6cb5c1892f966b9d459a5aec"
+    }
+  ],
+  "events": [
+    "send_original",
+    "ack_received"
+  ]
+}

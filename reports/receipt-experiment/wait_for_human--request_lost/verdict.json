@@ -1,0 +1,20 @@
+{
+  "strategy": "wait_for_human",
+  "fault": "request_lost",
+  "process_exit": 0,
+  "recovery_exit": 0,
+  "process_measured": false,
+  "infrastructure_ok": true,
+  "accepted": false,
+  "target_receipts": 0,
+  "local_status": "pending_human",
+  "success": false,
+  "reason": "receipt_local_or_infrastructure_failed",
+  "inbox": [],
+  "events": [
+    "send_original",
+    "simulated_timeout_before_inbox",
+    "timeout_observed_after_restart",
+    "timeout_waiting_for_human"
+  ]
+}

@@ -5,13 +5,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Literal
 
 from horizon_bench.agents.llm import LLMConfig
 from horizon_bench.family import get_family
-from horizon_bench.report import build_report
+from horizon_bench.receipt import FAULTS, STRATEGIES, initial_worker, recover, verify, write_verdict
 from horizon_bench.runner import Runner, make_policy, replay
 from horizon_bench.spec import RunSpec, load_salt, make_run_id, salt_hash, seeds_for
 from horizon_bench.store import Store
@@ -120,9 +122,120 @@ def cmd_show(args: argparse.Namespace) -> int:
 
 
 def cmd_report(args: argparse.Namespace) -> int:
+    from horizon_bench.report import build_report
+
     out = build_report(_store(args), args.batch or [args.name], args.name, Path(args.reports_dir))
     print(f"wrote {out / 'report.md'}")
     return 0
+
+
+def cmd_receipt_worker(args: argparse.Namespace) -> int:
+    client, inbox = Path(args.client_db), Path(args.inbox_db)
+    if args.recover:
+        recover(client, inbox, args.strategy)
+    else:
+        initial_worker(client, inbox, args.fault, args.crash)
+    return 0
+
+
+def cmd_receipt_experiment(args: argparse.Namespace) -> int:
+    """Run D001's fixed 4 x 3 matrix without exposing a fault to a strategy."""
+    out = Path(args.output)
+    if out.exists():
+        print(f"refusing to overwrite existing experiment directory: {out}", file=sys.stderr)
+        return 2
+    out.mkdir(parents=True)
+    rows: list[dict[str, Any]] = []
+    base = [sys.executable, "-m", "horizon_bench.cli"]
+    for fault in FAULTS:
+        for strategy in STRATEGIES:
+            cell = out / f"{strategy}--{fault}"
+            cell.mkdir()
+            client, inbox = cell / "client.sqlite", cell / "inbox.sqlite"
+            initial = [*base, "receipt-worker", "--client-db", str(client), "--inbox-db", str(inbox), "--fault", fault]
+            crash_requested = fault == "receipt_lost_crash"
+            if crash_requested:
+                initial.append("--crash")
+            first = subprocess.run(initial, capture_output=True, text=True)
+            measured = first.returncode == -signal.SIGKILL
+            # A new process is the recovery boundary. For the first two faults, this is also deliberately
+            # separate from the simulated timeout-producing process.
+            second = subprocess.run(
+                [
+                    *base,
+                    "receipt-worker",
+                    "--client-db",
+                    str(client),
+                    "--inbox-db",
+                    str(inbox),
+                    "--strategy",
+                    strategy,
+                    "--recover",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            verdict = verify(client, inbox, strategy, fault, first.returncode, measured, second.returncode)
+            write_verdict(cell / "verdict.json", verdict)
+            (cell / "process.json").write_text(
+                json.dumps(
+                    {
+                        "initial_returncode": first.returncode,
+                        "recovery_returncode": second.returncode,
+                        "process_measured": measured,
+                        "infrastructure_ok": verdict.infrastructure_ok,
+                        "observation": {
+                            "ack": "normal acknowledgement",
+                            "request_lost": "simulated timeout before the inbox write",
+                            "receipt_lost_crash": "inbox write followed by intended SIGKILL",
+                        }[fault],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+                + "\n"
+            )
+            rows.append(
+                {
+                    "strategy": strategy,
+                    "fault": fault,
+                    "success": verdict.success,
+                    "target_receipts": verdict.target_receipts,
+                    "local_status": verdict.local_status,
+                    "initial_returncode": first.returncode,
+                    "process_measured": measured,
+                    "infrastructure_ok": verdict.infrastructure_ok,
+                }
+            )
+            # SQLite files are execution scratch space. Stable JSON is the check-in evidence, not a live database.
+            for db_path in (client, inbox):
+                for suffix in ("", "-wal", "-shm"):
+                    (Path(str(db_path) + suffix)).unlink(missing_ok=True)
+    manifest = {
+        "matrix": "4 strategies x 3 faults",
+        "rows": rows,
+        "acceptance": (
+            "expected process exits, exactly one expected payload/version/digest in inbox, and local completed"
+        ),
+    }
+    (out / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    lines = [
+        "# D001 收件回执实验",
+        "",
+        "命令：`hb receipt-experiment --output <新目录>`。每格的 `verdict.json` 和 `process.json` "
+        "是稳定原始证据；SQLite/WAL 只在运行时存在。",
+        "",
+        "| 策略 | 故障 | 目标收件数 | 本地状态 | 成功 | 初始进程 |",
+        "|---|---|---:|---|---:|---:|",
+    ]
+    for row in rows:
+        lines.append(
+            f"| {row['strategy']} | {row['fault']} | {row['target_receipts']} | {row['local_status']} | "
+            f"{'是' if row['success'] else '否'} | {row['initial_returncode']} |"
+        )
+    (out / "README.zh.md").write_text("\n".join(lines) + "\n")
+    print(f"wrote {out / 'README.zh.md'}")
+    return 0 if all(row["infrastructure_ok"] for row in rows) else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -178,6 +291,19 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--batch", action="append", help="batch to include (repeatable); default: --name")
     s.add_argument("--reports-dir", default="reports")
     s.set_defaults(fn=cmd_report)
+
+    e = sub.add_parser("receipt-experiment", help="run D001's annual-report receipt/recovery matrix")
+    e.add_argument("--output", required=True, help="new directory for raw client/inbox SQLite files and verdicts")
+    e.set_defaults(fn=cmd_receipt_experiment)
+
+    w = sub.add_parser("receipt-worker", help=argparse.SUPPRESS)
+    w.add_argument("--client-db", required=True)
+    w.add_argument("--inbox-db", required=True)
+    w.add_argument("--fault", choices=FAULTS, default="ack")
+    w.add_argument("--strategy", choices=STRATEGIES, default="assume_success")
+    w.add_argument("--crash", action="store_true")
+    w.add_argument("--recover", action="store_true")
+    w.set_defaults(fn=cmd_receipt_worker)
     return p
 
 

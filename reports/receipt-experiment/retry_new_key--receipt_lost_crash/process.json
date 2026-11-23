@@ -1,0 +1,7 @@
+{
+  "initial_returncode": -9,
+  "recovery_returncode": 0,
+  "process_measured": true,
+  "infrastructure_ok": true,
+  "observation": "inbox write followed by intended SIGKILL"
+}

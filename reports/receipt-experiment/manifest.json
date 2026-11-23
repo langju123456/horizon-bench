@@ -1,0 +1,126 @@
+{
+  "matrix": "4 strategies x 3 faults",
+  "rows": [
+    {
+      "strategy": "assume_success",
+      "fault": "ack",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "wait_for_human",
+      "fault": "ack",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "retry_new_key",
+      "fault": "ack",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "reconcile_original_key",
+      "fault": "ack",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "assume_success",
+      "fault": "request_lost",
+      "success": false,
+      "target_receipts": 0,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "wait_for_human",
+      "fault": "request_lost",
+      "success": false,
+      "target_receipts": 0,
+      "local_status": "pending_human",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "retry_new_key",
+      "fault": "request_lost",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "reconcile_original_key",
+      "fault": "request_lost",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": 0,
+      "process_measured": false,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "assume_success",
+      "fault": "receipt_lost_crash",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": -9,
+      "process_measured": true,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "wait_for_human",
+      "fault": "receipt_lost_crash",
+      "success": false,
+      "target_receipts": 1,
+      "local_status": "pending_human",
+      "initial_returncode": -9,
+      "process_measured": true,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "retry_new_key",
+      "fault": "receipt_lost_crash",
+      "success": false,
+      "target_receipts": 2,
+      "local_status": "completed",
+      "initial_returncode": -9,
+      "process_measured": true,
+      "infrastructure_ok": true
+    },
+    {
+      "strategy": "reconcile_original_key",
+      "fault": "receipt_lost_crash",
+      "success": true,
+      "target_receipts": 1,
+      "local_status": "completed",
+      "initial_returncode": -9,
+      "process_measured": true,
+      "infrastructure_ok": true
+    }
+  ],
+  "acceptance": "expected process exits, exactly one expected payload/version/digest in inbox, and local completed"
+}

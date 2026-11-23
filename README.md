@@ -2,6 +2,10 @@
 
 [三个项目做什么、怎样验收和接着做](docs/portfolio-contract.zh.md)
 
+## 年报提交回执实验（D001）
+
+`hb receipt-experiment --output reports/receipt-experiment` 以同一份公开 CATL FY2025 经营现金流工作稿比较四种超时后的处理策略与三种故障。客户端意图 SQLite 和独立收件箱 SQLite 分开保存；验收只信收件内容、版本、摘要、唯一性和客户端完成状态。`receipt_lost_crash` 在收件箱提交后用子进程 `SIGKILL`，再启动新进程恢复；其余超时是显式模拟，不能混为真实进程故障。D001 固定输入、判据和复跑入口见 [决策记录](docs/decisions/001-report-receipt.md)。
+
 A small, deterministic test bench for **long-horizon LLM agents** on an industrial process task: operating a
 simulated heated reactor for a whole shift through tool calls. It records, for every run, **at which step and why
 the agent lost control**, whether richer tool returns help or mislead it, whether its memory survives context
