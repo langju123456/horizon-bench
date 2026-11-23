@@ -1,0 +1,622 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>交接实验复盘</title><style>
+body{max-width:58rem;margin:2rem auto;padding:0 1rem;font:16px/1.65 system-ui,sans-serif;color:#16322b}
+details{border-top:1px solid #9fb5aa;padding:.7rem 0}summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f2f5f3;padding:.8rem}
+</style><main><h1>交接实验复盘</h1><p>展开一条运行，查看模型或控制器实际读到的内容、提交的报告和验收结果。</p><details><summary>annual-to-q4 · llm:qwen3:8b+handoff_card · 失败</summary><p>未通过：latest_period, correct_amount。模型调用 5 次，输入 6151 token，输出 244 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;{\&quot;current_scope\&quot;: \&quot;更新范围：不要全年数，改成第四季度。\&quot;, \&quot;protected_reviewer_note\&quot;: \&quot;审阅备注：按千元列示，不四舍五入。\&quot;}&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>write_note</b><pre>{
+  &quot;参数&quot;: {
+    &quot;key&quot;: &quot;reviewer_note&quot;,
+    &quot;text&quot;: &quot;审阅备注：按千元列示，不四舍五入。&quot;
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;reviewer_note&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>finish</b><pre>{
+  &quot;参数&quot;: {
+    &quot;report&quot;: {
+      &quot;amount_thousand_cny&quot;: 133219982,
+      &quot;period&quot;: &quot;全年&quot;,
+      &quot;reviewer_note&quot;: &quot;审阅备注：按千元列示，不四舍五入。&quot;,
+      &quot;source_pages&quot;: [
+        11,
+        12
+      ],
+      &quot;unit&quot;: &quot;千元&quot;
+    }
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;report received&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li></ol></details><details><summary>q4-to-annual · llm:qwen3:8b+handoff_card · 失败</summary><p>未通过：correct_source_pages, reviewer_note_preserved, no_lost_control。模型调用 9 次，输入 13106 token，输出 567 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;{\&quot;current_scope\&quot;: \&quot;更新范围：不要单季数，改成全年数。\&quot;, \&quot;protected_reviewer_note\&quot;: \&quot;审阅备注：沿用工作稿单位。\&quot;}&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>finish</b><pre>{
+  &quot;参数&quot;: {
+    &quot;report&quot;: {
+      &quot;amount_thousand_cny&quot;: 133219982,
+      &quot;period&quot;: &quot;全年&quot;,
+      &quot;reviewer_note&quot;: &quot;审阅备注：审阅备注：沿用工作稿单位。&quot;,
+      &quot;source_pages&quot;: [
+        11,
+        12
+      ],
+      &quot;unit&quot;: &quot;千元&quot;
+    }
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;report received&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li></ol></details><details><summary>annual-to-q4 · llm:qwen3:8b+handoff_full · 失败</summary><p>未通过：latest_period, correct_amount, reviewer_note_preserved。模型调用 7 次，输入 11765 token，输出 345 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;[context] 客户：宁德时代。指标：2025 年经营活动产生的现金流量净额。\n[request] 初始范围：请核对全年数。\n[research] 上一班尚未查原表，不能把草稿数字当来源。\n[review_note] 审阅备注：按千元列示，不四舍五入。\n[draft] 旧草稿待重查，未获批准。\n[revision] 更新范围：不要全年数，改成第四季度。&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>write_note</b><pre>{
+  &quot;参数&quot;: {
+    &quot;text&quot;: &quot;审阅备注：按千万元列示，不四舍五入。&quot;,
+    &quot;key&quot;: &quot;reviewer_note&quot;
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;reviewer_note&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>finish</b><pre>{
+  &quot;参数&quot;: {
+    &quot;report&quot;: {
+      &quot;amount_thousand_cny&quot;: 133219982,
+      &quot;period&quot;: &quot;全年&quot;,
+      &quot;reviewer_note&quot;: &quot;审阅备注：按千万元列示，不四舍五入。&quot;,
+      &quot;source_pages&quot;: [
+        11,
+        12
+      ],
+      &quot;unit&quot;: &quot;千元&quot;
+    }
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;report received&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li></ol></details><details><summary>q4-to-annual · llm:qwen3:8b+handoff_full · 失败</summary><p>未通过：latest_period, correct_amount, correct_unit, correct_source_pages, reviewer_note_preserved, report_matches_truth。模型调用 9 次，输入 16178 token，输出 501 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;[context] 客户：宁德时代。指标：2025 年经营活动产生的现金流量净额。\n[review_note] 审阅备注：沿用工作稿单位。\n[request] 初始范围：请核对第四季度数。\n[research] 上一班尚未查原表，不能把草稿数字当来源。\n[draft] 旧草稿待重查，未获批准。\n[revision] 更新范围：不要单季数，改成全年数。&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>write_note</b><pre>{
+  &quot;参数&quot;: {
+    &quot;key&quot;: &quot;source_pages&quot;,
+    &quot;text&quot;: &quot;[11, 12]&quot;
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;source_pages&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>max_total_tokens</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li></ol></details><details><summary>annual-to-q4 · llm:qwen3:8b+handoff_last · 失败</summary><p>未通过：latest_period, correct_amount, correct_unit, correct_source_pages, reviewer_note_preserved, no_lost_control, report_matches_truth。模型调用 11 次，输入 16242 token，输出 610 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;[revision] 更新范围：不要全年数，改成第四季度。&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>max_total_tokens</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li></ol></details><details><summary>q4-to-annual · llm:qwen3:8b+handoff_last · 失败</summary><p>未通过：latest_period, correct_amount, correct_unit, correct_source_pages, reviewer_note_preserved, no_lost_control, report_matches_truth。模型调用 11 次，输入 16212 token，输出 610 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;[revision] 更新范围：不要单季数，改成全年数。&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>max_total_tokens</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li></ol></details><details><summary>annual-to-q4 · llm:qwen3:8b+handoff_recent3 · 失败</summary><p>未通过：latest_period, correct_amount, correct_unit, correct_source_pages, reviewer_note_preserved, no_lost_control, report_matches_truth。模型调用 11 次，输入 17220 token，输出 641 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;[review_note] 审阅备注：按千元列示，不四舍五入。\n[draft] 旧草稿待重查，未获批准。\n[revision] 更新范围：不要全年数，改成第四季度。&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>read_notes</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: {},
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>max_total_tokens</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li></ol></details><details><summary>q4-to-annual · llm:qwen3:8b+handoff_recent3 · 失败</summary><p>未通过：latest_period, correct_amount, correct_unit, correct_source_pages, reviewer_note_preserved, no_lost_control, report_matches_truth。模型调用 11 次，输入 17360 token，输出 557 token。</p><ol><li><b>read_handoff</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: &quot;[research] 上一班尚未查原表，不能把草稿数字当来源。\n[draft] 旧草稿待重查，未获批准。\n[revision] 更新范围：不要单季数，改成全年数。&quot;,
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>read_notes</b><pre>{
+  &quot;参数&quot;: {},
+  &quot;返回&quot;: {
+    &quot;value&quot;: {},
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 11
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 11,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 11，单位：千元。\n指标 | 2025 年全年 | 2024 年全年\n经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n六、分季度主要财务指标。单位：千元。表格接下页。\n指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>open_source</b><pre>{
+  &quot;参数&quot;: {
+    &quot;page&quot;: 12
+  },
+  &quot;返回&quot;: {
+    &quot;value&quot;: {
+      &quot;page&quot;: 12,
+      &quot;ok&quot;: true,
+      &quot;source_url&quot;: &quot;https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF&quot;,
+      &quot;text&quot;: &quot;印刷页 12，接第 11 页分季度表，表头和单位在前页。\n经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552&quot;
+    },
+    &quot;ok&quot;: true,
+    &quot;error&quot;: null,
+    &quot;confidence&quot;: 1.0,
+    &quot;age_steps&quot;: 0,
+    &quot;latency_ms&quot;: 50
+  }
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>无工具调用</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li><li><b>max_total_tokens</b><pre>{
+  &quot;参数&quot;: null,
+  &quot;返回&quot;: null
+}</pre></li></ol></details></main></html>
