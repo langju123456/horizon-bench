@@ -6,6 +6,8 @@
 
 下一班接手一份已经改过口径的宁德时代年报稿，通过工具读取交接记录和原表摘录，提交最终期间、金额、单位、来源页与审阅人要求保留的原话。前一班的记录为预置模拟输入。这里有两个公开开发任务，分别从全年改到第四季度、从第四季度改回全年。
 
+本机 Qwen3‑8B 在直接传中文后，用四次工具调用完成了第四季度任务；反向改回全年的任务用完步数。打开复盘页可同时看到正确稿和失败轨迹。[三种做法的结果](docs/decisions/003-tool-observations.md) · [复盘页](reports/tool-observations/review.html)
+
 ```bash
 hb run --family annual_handoff --policy catalog --name annual-demo --variant handoff_full --horizon 12
 hb report --name annual-demo
