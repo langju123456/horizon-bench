@@ -1,0 +1,315 @@
+{
+  "upstream": {
+    "review_sha256": "94b062fd35b1fc20822d7cca9a645f9b7f4cd109acc5f06ec5c8247f61adb70e",
+    "case_id": "apple-services-growth-contribution-dev",
+    "draft_id": "f904f2e1a97441909d31e1971da0e386",
+    "v1": "7981396eff303253099a6250b52c43d58026f1ce82301b3919c55c46ccb3d913",
+    "v2": "04e775dccd87ab65dfaeeab756a33221ee49e418f046fbd4e81b8309555b4e85",
+    "payload_digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+    "tool_run_ids": [
+      "7537b10920c54bafb83c910c213cb1ba",
+      "38d39251f3444889b8001c5e4ad15e35"
+    ],
+    "versions": [
+      {
+        "version": 1,
+        "revision_digest": "7981396eff303253099a6250b52c43d58026f1ce82301b3919c55c46ccb3d913",
+        "run_id": "7537b10920c54bafb83c910c213cb1ba"
+      },
+      {
+        "version": 2,
+        "revision_digest": "04e775dccd87ab65dfaeeab756a33221ee49e418f046fbd4e81b8309555b4e85",
+        "run_id": "38d39251f3444889b8001c5e4ad15e35"
+      }
+    ],
+    "local_receipt": "322d02dc087252c9de3d22c698f604bfa2762d914ccb6fc0ed73d19141481bf8",
+    "reported_by_forgeflow": {
+      "model_calls": 0,
+      "driver": "real FastAPI ASGI + SQLite, scripted roles, verified public PDF",
+      "roles": {
+        "dev-author": "scripted local author",
+        "dev-reviewer": "scripted local reviewer"
+      }
+    },
+    "repo": "https://github.com/langju123456/forgeflow",
+    "source_commit": "b74c8bb439658d1530a762391e13ae1861bd8968"
+  },
+  "rows": [
+    {
+      "world": "approved_v2_once",
+      "reader": "local_delivered",
+      "accepted": true,
+      "expected": true,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "approved_v2_once",
+      "reader": "upstream_chain",
+      "accepted": true,
+      "expected": true,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "approved_v2_once",
+      "reader": "inbox_count",
+      "accepted": true,
+      "expected": true,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "approved_v2_once",
+      "reader": "full_reconcile",
+      "accepted": true,
+      "expected": true,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "inbox_empty",
+      "reader": "local_delivered",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": []
+    },
+    {
+      "world": "inbox_empty",
+      "reader": "upstream_chain",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": []
+    },
+    {
+      "world": "inbox_empty",
+      "reader": "inbox_count",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": []
+    },
+    {
+      "world": "inbox_empty",
+      "reader": "full_reconcile",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": []
+    },
+    {
+      "world": "approved_v2_twice",
+      "reader": "local_delivered",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        },
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-2"
+        }
+      ]
+    },
+    {
+      "world": "approved_v2_twice",
+      "reader": "upstream_chain",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        },
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-2"
+        }
+      ]
+    },
+    {
+      "world": "approved_v2_twice",
+      "reader": "inbox_count",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        },
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-2"
+        }
+      ]
+    },
+    {
+      "world": "approved_v2_twice",
+      "reader": "full_reconcile",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        },
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-2"
+        }
+      ]
+    },
+    {
+      "world": "returned_v1_once",
+      "reader": "local_delivered",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "1",
+          "digest": "c89aea41c5febd0a4e248c88ca550dc2e6cde95dced1f242bbf03bb9eb3ce71b",
+          "key": "v1-1"
+        }
+      ]
+    },
+    {
+      "world": "returned_v1_once",
+      "reader": "upstream_chain",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "1",
+          "digest": "c89aea41c5febd0a4e248c88ca550dc2e6cde95dced1f242bbf03bb9eb3ce71b",
+          "key": "v1-1"
+        }
+      ]
+    },
+    {
+      "world": "returned_v1_once",
+      "reader": "inbox_count",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "1",
+          "digest": "c89aea41c5febd0a4e248c88ca550dc2e6cde95dced1f242bbf03bb9eb3ce71b",
+          "key": "v1-1"
+        }
+      ]
+    },
+    {
+      "world": "returned_v1_once",
+      "reader": "full_reconcile",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "1",
+          "digest": "c89aea41c5febd0a4e248c88ca550dc2e6cde95dced1f242bbf03bb9eb3ce71b",
+          "key": "v1-1"
+        }
+      ]
+    },
+    {
+      "world": "approval_corrupted",
+      "reader": "local_delivered",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "approval_corrupted",
+      "reader": "upstream_chain",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "approval_corrupted",
+      "reader": "inbox_count",
+      "accepted": true,
+      "expected": false,
+      "false_accept": true,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    },
+    {
+      "world": "approval_corrupted",
+      "reader": "full_reconcile",
+      "accepted": false,
+      "expected": false,
+      "false_accept": false,
+      "receipt_summary": [
+        {
+          "version": "2",
+          "digest": "788dbfddc60e91dddce07aebdf1f89c9c88288a0a52664ef38b544134a97fe36",
+          "key": "v2-1"
+        }
+      ]
+    }
+  ]
+}

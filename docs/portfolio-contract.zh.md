@@ -45,7 +45,9 @@
 |---|---|
 | 年报里两个都能搜到的数，哪个能回答当前委托？ | ForgeFlow 的产品入口能打开年度原格，资料不足会待核；Apple 的服务收入增速与增量贡献分别列出分母。[年度列](https://github.com/langju123456/forgeflow/commit/e195a0a2f764d30e2d1b5be8a131ceeef95d4b71) · [两个分母](https://github.com/langju123456/forgeflow/commit/206339470a53907fb7041bbb99001ea9bb38f682) |
 | 让程序算除法能修好多少？ | EvidenceLoop 在四道开发题上各跑三种实际模型方案，直接给数 1/4，选原格再计算 2/4，选业务公式与年份再计算 3/4，仍有年份选错。[计算实验](https://github.com/langju123456/evidenceloop/commit/859bd6e1722f4517a119ec3c9241027b2ad09cc3) |
+| 换成开发时没用过的公司，公式工具还能跑通吗？ | 先冻结 Dell/Cisco 两张原表及八道题，再做 24 次本地真实推理。在给定摘录的单数值任务中，直接答 1/8，自选原格 3/8，选业务公式和年份 8/8。文档家族数为二。[冻结协议](https://github.com/langju123456/evidenceloop/commit/0772ba8c3c0d38cada2dc2624daf2cf9f5f41afe) · [逐题结果](https://github.com/langju123456/evidenceloop/commit/1c07782a0235f2e3e694cc4a1ed1f89adacf5100) |
 | 断线后收件人手上到底有几份？ | 猜成功与换编号重交都为 2/3，分别会漏交、重交。先查原编号在三个固定情形均通过。EvidenceLoop 已引用产品的四条问答和本仓库的十二条独立回执，保留各自运行身份。[回执对照](decisions/001-report-receipt.md) · [跨仓引用](https://github.com/langju123456/evidenceloop/commit/0a650f7d1de9b21d97c3c3e4ac421c195283ac54) |
 | 交班后能否按最新口径交稿，保住人写的句子？ | 固定两个反向修改案例，比较四种交接记忆。再用相同历史，隔离中文工具返回的表示方式，逐题看能否修好。[交接记忆](decisions/002-handoff-memory.md) · [工具返回](decisions/003-tool-observations.md) |
+| 真实产品已经批准第二版，下游收到的是否就是这一版？ | 直接读取 ForgeFlow 已推送的 Apple 两版原稿。按相同稿件编号核验上游批准链和模拟收件箱，四种办法在五个情形上分别判对 1、2、3、5 个。[固定提交与签收对照](decisions/004-approved-delivery.md) |
 
 这份清单供下一次打开仓库的人继续使用。认领下一项前先看实际分支上的新实验和进程状态。Anthropic 在长程编码实验中使用功能验收清单、交班文件和可解释的 Git 提交。这里把这种做法落实为可以从原始动作重放的业务交付检查，实际通过数由本项目另测。[官方案例](https://www.anthropic.com/research/effective-harnesses-for-long-running-agents)

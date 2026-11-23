@@ -13,6 +13,7 @@ from typing import Any, Literal
 
 from horizon_bench.agents.llm import LLMConfig
 from horizon_bench.family import get_family
+from horizon_bench.forgeflow_delivery import cmd_forgeflow_delivery
 from horizon_bench.receipt import FAULTS, STRATEGIES, initial_worker, recover, verify, write_verdict
 from horizon_bench.runner import Runner, make_policy, replay
 from horizon_bench.spec import RunSpec, load_salt, make_run_id, salt_hash, seeds_for
@@ -307,6 +308,13 @@ def build_parser() -> argparse.ArgumentParser:
     e = sub.add_parser("receipt-experiment", help="run D001's annual-report receipt/recovery matrix")
     e.add_argument("--output", required=True, help="new directory for raw client/inbox SQLite files and verdicts")
     e.set_defaults(fn=cmd_receipt_experiment)
+
+    d4 = sub.add_parser("forgeflow-delivery", help="check a pinned Apple approval against five local inbox scenarios")
+    d4.add_argument("--source-repo", type=Path, required=True, help="local Git checkout of ForgeFlow")
+    d4.add_argument("--review-sha256", required=True)
+    d4.add_argument("--source-commit", required=True)
+    d4.add_argument("--output", type=Path, required=True, help="new JSON output file")
+    d4.set_defaults(fn=cmd_forgeflow_delivery)
 
     w = sub.add_parser("receipt-worker", help=argparse.SUPPRESS)
     w.add_argument("--client-db", required=True)
