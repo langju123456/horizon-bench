@@ -53,3 +53,11 @@
 **从这里进入面试演示。** 先展示审阅人要求“只要增量贡献”后，哪份稿获得批准，以及仅按收件份数会放过哪一版。再打开[真实模型交接](../reports/tool-observations/review.html)，看 Qwen3‑8B 如何查两页原表、交对季度稿，以及反向修改为什么用完步数。后续换了第二家发行人，开工时列清字段，模型四题全部交稿，严格验收只过一题。下一项针对多余引用，在新文档上检查原格与依据页能否精确对应。独立分析师试用和权重实验分别记录。[四种交稿办法及逐题结果](decisions/005-submit-the-handoff.md)
 
 这份清单供下一次打开仓库的人继续使用。认领下一项前先看实际分支上的新实验和进程状态。Anthropic 在长程编码实验中使用功能验收清单、交班文件和可解释的 Git 提交。这里把这种做法落实为可以从原始动作重放的业务交付检查，实际通过数由本项目另测。[官方案例](https://www.anthropic.com/research/effective-harnesses-for-long-running-agents)
+
+### 2026 年 11 月 24 日交班
+
+| 谁要做决定 | 可复验的进展 | 还要回答的问题 |
+|---|---|---|
+| 审阅人批准企业报告之前 | ForgeFlow 的苹果年报改稿按指标和财年比较，撤下增速，保留增长贡献和原格。分别用研究员、审阅人身份在浏览器跑通；两种身份由脚本扮演。[三种对照办法](https://github.com/langju123456/forgeflow/blob/597835f4559a1e960eb9d56f13b1f6f5e4a9e09d/preparation/annual-report-workbench/DECISION-005.md) | 多章节报告中，审阅人能否快速找到最值得复核的改动？ |
+| 工作流开发者交付跨班次任务之前 | HorizonBench 在两家公司四道题实跑四种办法。列清字段让交稿从 2/4 增至 4/4，严格验收仍为 1/4。其余三稿都多引了页。[十六份记录及选择理由](decisions/005-submit-the-handoff.md) | 怎样让依据页精确对应原表里的数值？ |
+| 模型负责人决定要不要换权重 | EvidenceLoop 用 32 条示范对本机 Qwen3‑0.6B 真做 LoRA，重新加载权重；腾讯和茅台的 18 道新留出上，原模型 4/18，加规则 4/18，适配器 1/18，保留原模型。实验由 Codex 执行，限于六个备选工具动作与一个种子。[冻结实验与逐题结果](https://github.com/langju123456/evidenceloop/blob/278347ea778aa9df654f67a0de65e7a2ceae59bc/docs/report-lab/12-action-sft-results.md) | 交换菜单位置并换任务样本后，模型能否在证据齐时交数、缺证时暂停？ |
