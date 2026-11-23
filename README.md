@@ -1,5 +1,7 @@
 # horizon-bench
 
+[三个项目做什么、怎样验收和接着做](docs/portfolio-contract.zh.md)
+
 A small, deterministic test bench for **long-horizon LLM agents** on an industrial process task: operating a
 simulated heated reactor for a whole shift through tool calls. It records, for every run, **at which step and why
 the agent lost control**, whether richer tool returns help or mislead it, whether its memory survives context
