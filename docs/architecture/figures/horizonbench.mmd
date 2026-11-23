@@ -1,0 +1,10 @@
+flowchart TB
+  CASE["任务快照与修订要求"] --> ENV["受控环境<br/>年报交接 / 收件回执 / 旧反应釜"]
+  ENV --> P["策略或模型驱动的执行者<br/>预算、工具观察、动作"]
+  P --> F["环境执行与故障注入<br/>丢请求、丢回执、进程中断"]
+  F --> ST["持久状态与恢复<br/>意图、检查点、原幂等键"]
+  ST --> O["独立真实状态<br/>收件箱、版本、payload digest"]
+  O --> V["Verifier<br/>逐项断言，不采信自报完成"]
+  V --> REC["VerificationReceipt<br/>结论、证据、未知与故障原因"]
+  REC -->|"已接：离线导入"| E["EvidenceLoop"]
+  PROD["ForgeFlow 实际稿件与提交"] -. "目标：同 run 故障适配" .-> ENV
