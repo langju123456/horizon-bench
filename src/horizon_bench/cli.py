@@ -67,7 +67,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         llm = LLMConfig(base_url=args.base_url, model=args.model, max_steps=args.max_steps,
                         max_tokens_per_call=args.max_tokens_per_call, max_total_tokens=args.max_total_tokens,
                         wall_time_s=args.wall_time, context_budget_tokens=args.context_budget,
-                        temperature=args.temperature, no_think=args.no_think).to_dict()
+                        temperature=args.temperature, no_think=args.no_think,
+                        tool_observation=args.tool_observation).to_dict()
     prices = load_prices(args.prices)
     successes = total = 0
     for policy in policies:
@@ -276,6 +277,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--wall-time", type=float, default=d.wall_time_s, help="seconds of model time per run")
     r.add_argument("--context-budget", type=int, default=d.context_budget_tokens)
     r.add_argument("--temperature", type=float, default=d.temperature)
+    r.add_argument("--tool-observation", choices=["escaped", "unicode", "business"], default="escaped",
+                   help="how the model reads tool results; recorded tool evidence is always preserved")
     r.add_argument("--no-think", action="store_true",
                    help="Qwen3 only: add the /no_think switch (recorded in the run spec)")
     r.add_argument("--prices", default=None, help='JSON {"model": [usd_per_1M_in, usd_per_1M_out]}')

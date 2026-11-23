@@ -25,17 +25,29 @@ def check_design(spec: RunSpec) -> None:
         raise ValueError(f"model or budget changed for {spec.run_id}: {differs}")
 
 
-def check(archive: Path) -> None:
+def arm(spec: RunSpec, study: str) -> str:
+    check_design(spec)
+    mode, = spec.variants
+    view = (spec.llm or {}).get("tool_observation", "escaped")
+    if study == "D002" and view == "escaped" and mode in MODES:
+        return mode
+    if study == "D003" and mode == "handoff_full" and view in ("escaped", "unicode", "business"):
+        return str(view)
+    raise ValueError(f"wrong arm for {study}: {mode}, {view}")
+
+
+def check(archive: Path, study: str, reports_dir: Path | None = None) -> None:
     seen = set()
+    batches = set()
     store = Store(":memory:")
     for path in sorted(archive.glob("*.json")):
         raw = json.loads(path.read_text())
         spec = RunSpec.model_validate(raw["spec"])
-        check_design(spec)
+        batches.add(spec.batch)
+        label = arm(spec, study)
         if not any(r["llm_call"] and r["prompt_tokens"] > 0 for r in raw["steps"]):
             raise ValueError(f"missing recorded model usage in {path}")
-        mode, = spec.variants
-        cell = (mode, spec.seed)
+        cell = (label, spec.seed)
         if cell in seen:
             raise ValueError(f"repeated case {cell}")
         seen.add(cell)
@@ -47,12 +59,17 @@ def check(archive: Path) -> None:
         if not result["ok"]:
             raise ValueError(f"{path}: {result}")
         print(f"{path.name}: replay OK, original task success={raw['verdict']['success']}")
-    expected = {(mode, seed) for mode in MODES for seed in (0, 1)}
+    labels = MODES if study == "D002" else ("escaped", "unicode", "business")
+    expected = {(label, seed) for label in labels for seed in (0, 1)}
     if seen != expected:
         raise ValueError(f"expected the complete matrix, got {sorted(seen)}")
+    if reports_dir is not None:
+        from horizon_bench.report import build_report
+
+        print(build_report(store, sorted(batches), study, reports_dir) / "review.html")
 
 
-def dump(db: Path, archive: Path, batches: list[str]) -> None:
+def dump(db: Path, archive: Path, batches: list[str], study: str) -> None:
     if not db.is_file():
         raise ValueError(f"run database does not exist: {db}")
     store = Store(db)
@@ -60,15 +77,17 @@ def dump(db: Path, archive: Path, batches: list[str]) -> None:
     for spec, verdict in store.runs(batches):
         if spec.policy != "llm":
             continue
-        mode, = spec.variants
-        if spec.family != "annual_handoff" or mode not in MODES or spec.split != "dev" or spec.seed not in (0, 1):
+        if study == "D003" and spec.batch == "D002" and spec.variants != ["handoff_full"]:
+            continue  # D003 reuses the two full-history baseline episodes already run for D002.
+        label = arm(spec, study)
+        if spec.seed not in (0, 1):
             raise ValueError(f"unexpected run in {spec.batch}")
-        path = archive / f"{mode}-dev{spec.seed}.json"
+        path = archive / f"{label}-dev{spec.seed}.json"
         payload = {"spec": spec.model_dump(), "steps": store.records(spec.run_id), "verdict": verdict}
         with path.open("x", encoding="utf-8") as stream:
             json.dump(payload, stream, ensure_ascii=False, indent=2)
             stream.write("\n")
-    check(archive)
+    check(archive, study)
 
 
 if __name__ == "__main__":
@@ -80,8 +99,11 @@ if __name__ == "__main__":
     save.add_argument("batches", nargs="+")
     offline = actions.add_parser("check")
     offline.add_argument("archive", type=Path)
+    offline.add_argument("--reports-dir", type=Path, help="also write a read-only review of the archived runs")
+    for sub in (save, offline):
+        sub.add_argument("--study", choices=["D002", "D003"], default="D002")
     args = parser.parse_args()
     if args.action == "dump":
-        dump(args.db, args.archive, args.batches)
+        dump(args.db, args.archive, args.batches, args.study)
     else:
-        check(args.archive)
+        check(args.archive, args.study, args.reports_dir)

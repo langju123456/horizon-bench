@@ -18,3 +18,17 @@ D002 全历史组的第一个实际运行中，Qwen3‑8B 打开了印刷页 11�
 **实验条件。** Codex 代做。固定 D002 的全历史，使用同一份宁德时代年报、同两个反向修改、同版模型、提示、可用工具、独立验收和每任务预算。第一组直接复用已登记的 D002 全历史两条原始轨迹；另两组从任务开始，各执行两条真实模型运行。这比只让模型重抄正确答案更接近使用者的工作。第三组只改变成功工具结果的外层包装，保留原页、业务值和错误。它的结论限于本环境的稳定本地资料。
 
 逐题列终态通过、实际取证页、审阅原话、输入/输出 token、工具次数与累计模型时间。候选方案先看修好与退化，再看所需输入。原始记录可用相同独立判据回放。这里使用公开开发题，重复观察同一份年报，结论保留这个边界。
+
+**怎样复跑。** 先按[交接实验](002-handoff-memory.md)生成本地的 D002 基线。保持同一个输入库、模型和设置，执行下面两组。归档时只从 D002 取全历史的两条原始运行。
+
+```bash
+for view in unicode business; do
+  env -u HB_API_KEY -u OPENAI_API_KEY hb --runs-dir runs/D002 run \
+    --family annual_handoff --policy llm --name "D003-$view" --tools rich --variant handoff_full \
+    --seeds 2 --horizon 12 --session-len 12 --max-steps 12 --max-tokens-per-call 384 \
+    --max-total-tokens 16000 --context-budget 8000 --wall-time 240 --temperature 0 \
+    --model qwen3:8b --base-url http://127.0.0.1:11434/v1 --no-think --tool-observation "$view" || break
+done
+python scripts/handoff_archive.py dump runs/D002/hb.sqlite runs/D003-published D002 D003-unicode D003-business --study D003
+python scripts/handoff_archive.py check runs/D003-published --study D003 --reports-dir reports
+```

@@ -32,6 +32,9 @@ Group = tuple[str, str, int]  # (policy label, tools, horizon)
 
 def policy_label(spec: RunSpec) -> str:
     label = f"llm:{(spec.llm or {}).get('model', '?')}" if spec.policy == "llm" else spec.policy
+    view = (spec.llm or {}).get("tool_observation", "escaped")
+    if view != "escaped":
+        label += f"+{view}"
     return label + "".join(f"+{v}" for v in spec.variants)  # variants get their own rows
 
 

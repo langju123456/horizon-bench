@@ -14,7 +14,7 @@ import math
 import re
 import time
 from dataclasses import asdict, dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlsplit
 
 import httpx
@@ -40,9 +40,13 @@ class LLMConfig:
     timeout_s: float = 300.0
     max_consecutive_errors: int = 3
     no_think: bool = False  # thinking off: reasoning_effort none, plus Qwen3's /no_think text switch
+    tool_observation: Literal["escaped", "unicode", "business"] = "escaped"
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        settings = asdict(self)
+        if self.tool_observation == "escaped":
+            settings.pop("tool_observation")  # Existing saved runs and their default setting stay identical.
+        return settings
 
 
 def is_loopback(url: str) -> bool:
@@ -111,7 +115,13 @@ class LLMAgent(Policy):
         st, warn = self.st, "\n".join(obs.warnings)
         pending, st["pending"] = st["pending"], None
         if pending and pending.get("id"):
-            content = json.dumps({"step": obs.step - 1, "result": obs.result})
+            payload = obs.result
+            if self.cfg.tool_observation == "business" and self.spec.tools == "rich" and isinstance(payload, dict):
+                envelope = {"value", "ok", "error", "confidence", "age_steps", "latency_ms"}
+                if payload.keys() == envelope and payload["ok"] is True and payload["error"] is None:
+                    payload = payload["value"]
+            content = json.dumps({"step": obs.step - 1, "result": payload},
+                                 ensure_ascii=self.cfg.tool_observation == "escaped")
             st["messages"].append({"role": "tool", "tool_call_id": pending["id"], "name": pending["name"],
                                    "content": content + (f"\n{warn}" if warn else "")})
         elif st["nudge"] or warn:
