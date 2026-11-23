@@ -7,6 +7,7 @@ import json
 import math
 import subprocess
 from collections import Counter, defaultdict
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -66,8 +67,25 @@ def build_report(store: Store, batches: list[str], name: str, out_root: Path = P
     runs = store.runs(batches)
     if not runs:
         raise SystemExit(f"no finished runs in batches {batches}")
+    if len({spec.family for spec, _ in runs}) != 1:
+        raise SystemExit("choose batches from a single family; reactor and handoff verdicts use different checks")
     out = out_root / name
     out.mkdir(parents=True, exist_ok=True)
+    if any(spec.family != "reactor" for spec, _ in runs):
+        manifest = _manifest(runs, batches)
+        (out / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        lines = [f"# {name}", "", "| 环境 | 策略 | 任务 | 交付 | 未通过项 | 模型调用 | 输入 / 输出 token |",
+                 "|---|---|---|---|---|---:|---:|"]
+        for spec, verdict in runs:
+            usage = verdict["usage"]
+            failed = ", ".join(verdict["failed"]) or "—"
+            case = verdict["metrics"].get("case", spec.run_id)
+            status = "成功" if verdict["success"] else "失败"
+            lines.append(f"| {spec.family} | {policy_label(spec)} | {case} | {status} | {failed} | "
+                         f"{usage['llm_calls']} | {usage['prompt_tokens']} / {usage['completion_tokens']} |")
+        (out / "report.md").write_text("\n".join(lines) + "\n")
+        _handoff_review(store, runs, out / "review.html")
+        return out
     groups: dict[Group, list[tuple[RunSpec, dict[str, Any]]]] = defaultdict(list)
     for spec, v in runs:
         groups[(policy_label(spec), spec.tools, spec.horizon)].append((spec, v))
@@ -85,6 +103,36 @@ def build_report(store: Store, batches: list[str], name: str, out_root: Path = P
 
 
 # ---- tables -------------------------------------------------------------------------------
+def _handoff_review(store: Store, runs: list[tuple[RunSpec, dict[str, Any]]], path: Path) -> None:
+    """Standalone read-only review. All tool/model content is untrusted display text."""
+    sections = []
+    for spec, verdict in runs:
+        case = str(verdict["metrics"].get("case", spec.run_id))
+        status = "成功" if verdict["success"] else "失败"
+        failed = ", ".join(verdict["failed"])
+        checks = "全部验收项通过" if not failed else f"未通过：{failed}"
+        actions = []
+        for record in store.records(spec.run_id):
+            if not record["agent_active"]:
+                continue
+            action = str(record["tool"] or record["abort"] or "无工具调用")
+            payload = {"参数": record["args"], "返回": record["result"]}
+            rendered = escape(json.dumps(payload, ensure_ascii=False, indent=2))
+            actions.append(f"<li><b>{escape(action)}</b><pre>{rendered}</pre></li>")
+        usage = verdict["usage"]
+        sections.append(f"<details><summary>{escape(case)} · {escape(policy_label(spec))} · {status}</summary>"
+                        f"<p>{escape(checks)}。模型调用 {usage['llm_calls']} 次，输入 {usage['prompt_tokens']} token，"
+                        f"输出 {usage['completion_tokens']} token。</p><ol>{''.join(actions)}</ol></details>")
+    html = """<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>交接实验复盘</title><style>
+body{max-width:58rem;margin:2rem auto;padding:0 1rem;font:16px/1.65 system-ui,sans-serif;color:#16322b}
+details{border-top:1px solid #9fb5aa;padding:.7rem 0}summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f2f5f3;padding:.8rem}
+</style><main><h1>交接实验复盘</h1><p>展开一条运行，查看模型或控制器实际读到的内容、提交的报告和验收结果。</p>"""
+    path.write_text(html + "".join(sections) + "</main></html>\n", encoding="utf-8")
+
+
 def _rate(vs: list[dict[str, Any]], key: str) -> float:
     return sum(1 for v in vs if v["checks"].get(key)) / len(vs)
 

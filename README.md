@@ -2,9 +2,21 @@
 
 [三个项目做什么、怎样验收和接着做](docs/portfolio-contract.zh.md)
 
+## 年报交接任务
+
+下一班接手一份已经改过口径的宁德时代年报稿，通过工具读取交接记录和原表摘录，提交最终期间、金额、单位、来源页与审阅人要求保留的原话。前一班的记录为预置模拟输入。这里有两个公开开发任务，分别从全年改到第四季度、从第四季度改回全年。
+
+```bash
+hb run --family annual_handoff --policy catalog --name annual-demo --variant handoff_full --horizon 12
+hb report --name annual-demo
+```
+
+用 `--policy llm --model qwen3:8b --base-url http://127.0.0.1:11434/v1 --no-think` 可改用本地模型。
+每条运行均可用 `hb replay <run_id>` 重放记录的动作。来源核对要求季度引用覆盖印刷页 11 的表头与页 12 的数据。[交接方式与验收](docs/decisions/002-handoff-memory.md)
+
 ## 年报提交回执实验（D001）
 
-`hb receipt-experiment --output reports/receipt-experiment` 以同一份公开 CATL FY2025 经营现金流工作稿比较四种超时后的处理策略与三种故障。客户端意图 SQLite 和独立收件箱 SQLite 分开保存；验收只信收件内容、版本、摘要、唯一性和客户端完成状态。`receipt_lost_crash` 在收件箱提交后用子进程 `SIGKILL`，再启动新进程恢复；其余超时是显式模拟，不能混为真实进程故障。D001 固定输入、判据和复跑入口见 [决策记录](docs/decisions/001-report-receipt.md)。
+`hb receipt-experiment --output runs/my-first-receipt-study` 以同一份公开 CATL FY2025 经营现金流工作稿比较四种超时后的处理策略与三种故障。客户端意图 SQLite 和独立收件箱 SQLite 分开保存；验收只信收件内容、版本、摘要、唯一性和客户端完成状态。`receipt_lost_crash` 在收件箱提交后用子进程 `SIGKILL`，再启动新进程恢复；其余超时是显式模拟，不能混为真实进程故障。D001 固定输入、判据和复跑入口见 [决策记录](docs/decisions/001-report-receipt.md)。
 
 A small, deterministic test bench for **long-horizon LLM agents** on an industrial process task: operating a
 simulated heated reactor for a whole shift through tool calls. It records, for every run, **at which step and why

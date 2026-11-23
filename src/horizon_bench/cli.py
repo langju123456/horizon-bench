@@ -50,30 +50,39 @@ def _api_key(args: argparse.Namespace) -> str | None:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    family = get_family(args.family)
+    annual = family.name == "annual_handoff"
+    variants = _variants(args.variant or ("handoff_full" if annual else ""), family.name)
+    count = args.seeds if args.seeds is not None else (2 if annual else 5)
+    if annual and (args.split != "dev" or count not in (1, 2) or len(variants) != 1):
+        raise SystemExit("annual_handoff has two public dev cases; select 1 or 2 seeds and one handoff variant")
+    policies = _csv(args.policy or next(iter(family.policies)))
+    run_prefix = f"{args.name}-{family.name}-{variants[0]}" if annual else args.name
     store = _store(args)
     runner = Runner(store, Path(args.runs_dir))
     salt = load_salt() if args.split == "eval" else None
-    seeds = seeds_for(args.split, args.seeds, salt)
+    seeds = seeds_for(args.split, count, salt)
     llm = None
-    if "llm" in _csv(args.policy):
+    if "llm" in policies:
         llm = LLMConfig(base_url=args.base_url, model=args.model, max_steps=args.max_steps,
                         max_tokens_per_call=args.max_tokens_per_call, max_total_tokens=args.max_total_tokens,
                         wall_time_s=args.wall_time, context_budget_tokens=args.context_budget,
                         temperature=args.temperature, no_think=args.no_think).to_dict()
     prices = load_prices(args.prices)
-    variants = _variants(args.variant, args.family)
     successes = total = 0
-    for policy in _csv(args.policy):
+    for policy in policies:
         for tools in _csv(args.tools):
             for horizon in [int(h) for h in _csv(args.horizon)]:
                 for i, seed in enumerate(seeds):
                     spec = RunSpec(
-                        run_id=make_run_id(args.name, policy, tools, horizon, args.split, i), batch=args.name,
+                        run_id=make_run_id(run_prefix, policy, tools, horizon, args.split, i), batch=args.name,
                         family=args.family, policy=policy, tools=_tool_mode(tools), horizon=horizon,
                         session_len=args.session_len,
                         seed=seed, split=args.split, seed_index=i, salt_sha256=salt_hash(salt) if salt else None,
                         llm=llm if policy == "llm" else None, prices=prices, variants=variants)
                     status = store.status(spec.run_id)
+                    if annual and status and not args.overwrite and spec != store.spec(spec.run_id):
+                        raise SystemExit(f"configuration changed for {spec.run_id}; choose a new --name")
                     if status == "done" and not args.overwrite:
                         print(f"skip {spec.run_id}: done (use --overwrite to run it again)")
                         continue
@@ -239,18 +248,18 @@ def cmd_receipt_experiment(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="hb", description="Long-horizon agent test bench (reactor task).")
+    p = argparse.ArgumentParser(prog="hb", description="Agent test bench for reactor shifts and report handoffs.")
     p.add_argument("--runs-dir", default="runs", help="where hb.sqlite and per-run traces live")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     r = sub.add_parser("run", help="run one or more policies over a seed set")
-    r.add_argument("--policy", default="pid", help="comma list of pid,naive,lazy,random,llm")
+    r.add_argument("--policy", help="family policy or llm; defaults to pid for reactor and catalog for annual_handoff")
     r.add_argument("--tools", default="rich", help="comma list of bare,rich")
     r.add_argument("--horizon", default="120", help="comma list of horizons in steps")
-    r.add_argument("--seeds", type=int, default=5, help="number of seeds")
+    r.add_argument("--seeds", type=int, help="number of seeds; reactor defaults to five, annual_handoff to two")
     r.add_argument("--split", choices=["dev", "eval"], default="dev")
     r.add_argument("--name", default="default", help="batch name, used by `hb report`")
-    r.add_argument("--family", default="reactor")
+    r.add_argument("--family", choices=["reactor", "annual_handoff"], default="reactor")
     r.add_argument("--session-len", type=int, default=40)
     r.add_argument("--variant", default="",
                    help="comma list of opt-in levers recorded in the run spec: ctx_rule (control procedure in "

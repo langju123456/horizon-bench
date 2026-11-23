@@ -22,3 +22,21 @@
 **验收。** 每次核对实际提交的产物、最新期间、金额、单位、来源页、实际读取来源的动作、应逐字保留的审阅内容。另报模型调用数、输入输出 token、耗时、失败理由与原始动作回放是否一致。小样本计数相同时，保留平局。外部收件回执由第一项实验独立评估。
 
 宁德时代 2025 年报在印刷页 11 披露全年现金流，分季度表的表头在页 11、数据行在页 12。任务工具提供标有这些页码的人工核过的摘录。[原始年报](https://static.cninfo.com.cn/finalpage/2026-03-09/1225002666.PDF)
+
+## 在本机重复这批正式比较
+
+从仓库根目录运行。安装项目、启动本地 Ollama 并已有 `qwen3:8b` 后，使用同一模型依次完成四组。每段交接最多 600 个字符，每任务最多 240 秒累计模型耗时。总用量和时间在发起下一次调用前检查。这里的“正式比较”指按本页条件记录公开开发样例。
+
+```bash
+for mode in handoff_full handoff_last handoff_card handoff_recent3; do
+  env -u HB_API_KEY -u OPENAI_API_KEY hb --runs-dir runs/D002 run \
+    --family annual_handoff --policy llm --name D002 --tools rich --variant "$mode" \
+    --seeds 2 --horizon 12 --session-len 12 --max-steps 12 --max-tokens-per-call 384 \
+    --max-total-tokens 16000 --context-budget 8000 --wall-time 240 --temperature 0 \
+    --model qwen3:8b --base-url http://127.0.0.1:11434/v1 --no-think || break
+done
+python scripts/handoff_archive.py dump runs/D002/hb.sqlite runs/D002-published D002
+hb --runs-dir runs/D002 report --name D002
+```
+
+用 `python scripts/handoff_archive.py check <轨迹目录>` 可离线逐步重放。归档工具核对八个实验格、预算、模型标识、记录的模型用量、工具返回和最终判定。重放使用历史动作，不产生新的模型调用。各任务的规则控制器可用 `--policy catalog` 单独运行。

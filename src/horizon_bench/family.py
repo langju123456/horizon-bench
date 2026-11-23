@@ -76,9 +76,10 @@ class Family:
 
 
 def get_family(name: str) -> Family:
+    from horizon_bench.env.annual_handoff import ANNUAL_HANDOFF
     from horizon_bench.env.reactor_family import REACTOR  # local import avoids a cycle
 
-    families = {REACTOR.name: REACTOR}
+    families = {family.name: family for family in (REACTOR, ANNUAL_HANDOFF)}
     if name not in families:
         raise KeyError(f"unknown family {name!r}; available: {', '.join(families)}")
     return families[name]
