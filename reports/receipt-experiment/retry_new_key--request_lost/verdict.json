@@ -31,7 +31,6 @@
   ],
   "events": [
     "send_original",
-    "simulated_timeout_before_inbox",
     "timeout_observed_after_restart",
     "timeout_retried_with_new_key"
   ]

@@ -175,14 +175,12 @@ def _first_attempt(client: ClientStore, inbox: Inbox, fault: Fault, crash: bool)
     intent = client.intent(TASK_ID)
     client.event(TASK_ID, "send_original")
     if fault == "request_lost":
-        client.event(TASK_ID, "simulated_timeout_before_inbox")
         return
     inbox.deliver(str(intent["idem_key"]), TASK_ID, cast(dict[str, object], intent["payload"]), str(intent["version"]))
     if fault == "receipt_lost_crash":
         if crash:
             # This is intentionally after the independent SQLite commit and before any local completion.
             os.kill(os.getpid(), signal.SIGKILL)
-        client.event(TASK_ID, "simulated_crash_after_inbox_write")
         return
     client.complete(TASK_ID, "ack_received")
 

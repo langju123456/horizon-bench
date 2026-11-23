@@ -45,6 +45,15 @@ def test_reconciliation_resends_original_key_then_completes(tmp_path: Path) -> N
     assert ClientStore(client).intent(TASK_ID)["digest"] == content_digest()
 
 
+def test_timeout_worlds_expose_identical_client_intents(tmp_path: Path) -> None:
+    observations = []
+    for fault in ("request_lost", "receipt_lost_crash"):
+        client = tmp_path / f"{fault}-client.sqlite"
+        initial_worker(client, tmp_path / f"{fault}-inbox.sqlite", fault, crash=False)
+        observations.append(ClientStore(client).intent(TASK_ID))
+    assert observations[0] == observations[1]
+
+
 def test_verifier_rejects_an_extra_wrong_version_for_the_target_task(tmp_path: Path) -> None:
     client, inbox_path = tmp_path / "client.sqlite", tmp_path / "inbox.sqlite"
     initial_worker(client, inbox_path, "ack", crash=False)

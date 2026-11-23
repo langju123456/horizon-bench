@@ -31,7 +31,6 @@
   ],
   "events": [
     "send_original",
-    "simulated_timeout_before_inbox",
     "timeout_observed_after_restart",
     "reconcile_absent_then_resend_original",
     "reconcile_confirmed"

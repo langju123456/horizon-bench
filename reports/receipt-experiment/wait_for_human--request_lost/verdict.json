@@ -13,7 +13,6 @@
   "inbox": [],
   "events": [
     "send_original",
-    "simulated_timeout_before_inbox",
     "timeout_observed_after_restart",
     "timeout_waiting_for_human"
   ]
