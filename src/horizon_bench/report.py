@@ -35,6 +35,9 @@ def policy_label(spec: RunSpec) -> str:
     view = (spec.llm or {}).get("tool_observation", "escaped")
     if view != "escaped":
         label += f"+{view}"
+    submission = (spec.llm or {}).get("submission", "auto")
+    if submission != "auto":
+        label += f"+{submission}"
     return label + "".join(f"+{v}" for v in spec.variants)  # variants get their own rows
 
 

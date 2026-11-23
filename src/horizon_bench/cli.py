@@ -58,18 +58,28 @@ def cmd_run(args: argparse.Namespace) -> int:
     if annual and (args.split != "dev" or count not in (1, 2) or len(variants) != 1):
         raise SystemExit("annual_handoff has two public dev cases; select 1 or 2 seeds and one handoff variant")
     policies = _csv(args.policy or next(iter(family.policies)))
+    if args.submission != "auto" and (not annual or policies != ["llm"]):
+        raise SystemExit("--submission requires --family annual_handoff --policy llm")
+    if args.handoff_doc != "catl" and not annual:
+        raise SystemExit("--handoff-doc only applies to annual_handoff")
     run_prefix = f"{args.name}-{family.name}-{variants[0]}" if annual else args.name
+    if args.handoff_doc != "catl":
+        run_prefix += "-" + args.handoff_doc
+    if args.submission != "auto":
+        run_prefix += "-" + args.submission
     store = _store(args)
     runner = Runner(store, Path(args.runs_dir))
     salt = load_salt() if args.split == "eval" else None
     seeds = seeds_for(args.split, count, salt)
+    if args.handoff_doc == "transfer":
+        seeds = [seed + 2 for seed in seeds]
     llm = None
     if "llm" in policies:
         llm = LLMConfig(base_url=args.base_url, model=args.model, max_steps=args.max_steps,
                         max_tokens_per_call=args.max_tokens_per_call, max_total_tokens=args.max_total_tokens,
                         wall_time_s=args.wall_time, context_budget_tokens=args.context_budget,
                         temperature=args.temperature, no_think=args.no_think,
-                        tool_observation=args.tool_observation).to_dict()
+                        tool_observation=args.tool_observation, submission=args.submission).to_dict()
     prices = load_prices(args.prices)
     successes = total = 0
     for policy in policies:
@@ -262,6 +272,10 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--split", choices=["dev", "eval"], default="dev")
     r.add_argument("--name", default="default", help="batch name, used by `hb report`")
     r.add_argument("--family", choices=["reactor", "annual_handoff"], default="reactor")
+    r.add_argument("--handoff-doc", choices=["catl", "transfer"], default="catl",
+                   help="choose the original CATL cases or the second public document's cases")
+    r.add_argument("--submission", choices=["auto", "fields", "reminder", "task_tools"], default="auto",
+                   help="annual handoff only: compare how the model sees or is reminded of the final submission")
     r.add_argument("--session-len", type=int, default=40)
     r.add_argument("--variant", default="",
                    help="comma list of opt-in levers recorded in the run spec: ctx_rule (control procedure in "

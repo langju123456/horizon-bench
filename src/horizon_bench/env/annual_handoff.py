@@ -21,11 +21,41 @@ HANDOFF_CHARS = 600
 
 
 @dataclass(frozen=True)
+class SourceDocument:
+    issuer: str
+    url: str
+    pages: dict[int, str]  # Printed numbering, in reading order.
+
+
+CATL = SourceDocument("宁德时代", SOURCE_URL, {
+    11: ("印刷页 11，单位：千元。\n"
+         "指标 | 2025 年全年 | 2024 年全年\n"
+         "经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n"
+         "六、分季度主要财务指标。单位：千元。表格接下页。\n"
+         "指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度"),
+    12: ("印刷页 12，接第 11 页分季度表，表头和单位在前页。\n"
+         "经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552"),
+})
+CHALCO = SourceDocument("中国铝业", "https://static.cninfo.com.cn/finalpage/2026-03-28/1225048106.PDF", {
+    10: ("印刷页 10，单位：千元，币种：人民币。主要会计数据（摘列）。\n"
+         "指标 | 2025 年全年 | 2024 年全年（调整后） | 2024 年全年（调整前）\n"
+         "经营活动产生的现金流量净额 | 34,092,341 | 32,809,274 | 32,807,186"),
+    11: ("印刷页 11，2025 年分季度主要财务数据。单位：千元，币种：人民币。\n"
+         "指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度\n"
+         "经营活动产生的现金流量净额 | 6,259,774 | 8,004,971 | 11,115,473 | 8,712,123"),
+})
+
+
+def source_document(seed: int) -> SourceDocument:
+    return CHALCO if seed in (2, 3) else CATL
+
+
+@dataclass(frozen=True)
 class Case:
     name: str
     desired_period: Literal["全年", "第四季度"]
     desired_amount: int
-    desired_page: int
+    required_pages: tuple[int, ...]
     reviewer_note: str
     events: tuple[dict[str, str], ...]
 
@@ -35,7 +65,7 @@ CASES = (
         "annual-to-q4",
         "第四季度",
         52559552,
-        12,
+        (11, 12),
         "审阅备注：按千元列示，不四舍五入。",
         (
             {"type": "context", "text": "客户：宁德时代。指标：2025 年经营活动产生的现金流量净额。"},
@@ -50,7 +80,7 @@ CASES = (
         "q4-to-annual",
         "全年",
         133219982,
-        11,
+        (11,),
         "审阅备注：沿用工作稿单位。",
         (
             {"type": "context", "text": "客户：宁德时代。指标：2025 年经营活动产生的现金流量净额。"},
@@ -61,6 +91,23 @@ CASES = (
             {"type": "revision", "text": "更新范围：不要单季数，改成全年数。"},
         ),
     ),
+)
+
+TRANSFER_CASES = (
+    Case("chalco-annual-to-q4", "第四季度", 8712123, (11,), "审阅备注：请沿用披露精度。", (
+        {"type": "context", "text": "客户：中国铝业。指标：2025 年经营活动产生的现金流量净额。"},
+        {"type": "request", "text": "最初要在会上汇报全年情况。"},
+        {"type": "review_note", "text": "审阅备注：请沿用披露精度。"},
+        {"type": "draft", "text": "旧稿仍列全年口径，尚未核验。"},
+        {"type": "revision", "text": "会议缩小了范围，改成第四季度。"},
+    )),
+    Case("chalco-q4-to-annual", "全年", 34092341, (10,), "审阅备注：保留人民币原单位。", (
+        {"type": "context", "text": "客户：中国铝业。指标：2025 年经营活动产生的现金流量净额。"},
+        {"type": "review_note", "text": "审阅备注：保留人民币原单位。"},
+        {"type": "request", "text": "初稿先整理第四季度的数。"},
+        {"type": "draft", "text": "交班前尚未完成对照。"},
+        {"type": "revision", "text": "会上要看整年情况，改成全年。"},
+    )),
 )
 
 
@@ -75,7 +122,8 @@ class AnnualHandoffEnv:
 
     def __init__(self, seed: int, horizon: int) -> None:
         self.seed, self.horizon = seed, horizon
-        self.case = CASES[seed % len(CASES)]
+        self.document = source_document(seed)
+        self.case = TRANSFER_CASES[seed - 2] if self.document is CHALCO else CASES[seed % len(CASES)]
         self.s = HandoffState()
 
     @property
@@ -117,23 +165,11 @@ class AnnualHandoffEnv:
         return json.dumps(card, ensure_ascii=False)[:HANDOFF_CHARS]
 
     def excerpt(self, page: int) -> dict[str, Any]:
-        if page not in (11, 12):
-            return {"page": page, "ok": False, "text": "该任务只提供印刷页 11 和 12 的相关摘录。"}
+        if page not in self.document.pages:
+            pages = " 和 ".join(map(str, self.document.pages))
+            return {"page": page, "ok": False, "text": f"该任务只提供印刷页 {pages} 的相关摘录。"}
         self.s.source_reads.append(page)
-        if page == 11:
-            text = (
-                "印刷页 11，单位：千元。\n"
-                "指标 | 2025 年全年 | 2024 年全年\n"
-                "经营活动产生的现金流量净额 | 133,219,982 | 96,990,345\n"
-                "六、分季度主要财务指标。单位：千元。表格接下页。\n"
-                "指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度"
-            )
-        else:
-            text = (
-                "印刷页 12，接第 11 页分季度表，表头和单位在前页。\n"
-                "经营活动产生的现金流量净额 | 32,868,257 | 25,818,809 | 21,973,364 | 52,559,552"
-            )
-        return {"page": page, "ok": True, "source_url": SOURCE_URL, "text": text}
+        return {"page": page, "ok": True, "source_url": self.document.url, "text": self.document.pages[page]}
 
     def to_dict(self) -> dict[str, Any]:
         return {"seed": self.seed, "horizon": self.horizon, "state": asdict(self.s)}
@@ -188,6 +224,7 @@ class CatalogPolicy(Policy):
     name = "catalog"
 
     def __init__(self, spec: RunSpec) -> None:
+        self.pages = list(source_document(spec.seed).pages)
         self.start_session(0, 0)
 
     def start_session(self, session: int, step: int) -> None:
@@ -216,7 +253,7 @@ class CatalogPolicy(Policy):
             if self.period is None or self.note is None:
                 return Action(None, abort="handoff_missing_current_scope_or_reviewer_note")
             self.stage = 2
-            return Action("open_source", {"page": 11})
+            return Action("open_source", {"page": self.pages[0]})
         if self.stage in (2, 3):
             source = value.get("text") if isinstance(value, dict) else None
             if not isinstance(source, str):
@@ -224,14 +261,15 @@ class CatalogPolicy(Policy):
             self.source_text.append(source)
             if self.stage == 2 and self.period == "第四季度":
                 self.stage = 3
-                return Action("open_source", {"page": 12})
+                return Action("open_source", {"page": self.pages[1]})
             return self._finish()
         return Action(None, abort="unexpected_catalog_stage")
 
     def _finish(self) -> Action:
         column = "第四季度" if self.period == "第四季度" else "2025 年全年"
-        header = next((line for line in self.source_text[0].splitlines() if line.startswith("指标 |")
-                       and column in line), "")
+        header_page, header = next(((idx, line) for idx, page in enumerate(self.source_text)
+                                    for line in page.splitlines() if line.startswith("指标 |") and column in line),
+                                   (0, ""))
         row = next((line for line in self.source_text[-1].splitlines()
                     if line.startswith("经营活动产生的现金流量净额")), "")
         headers = [part.strip() for part in header.split("|")]
@@ -242,7 +280,7 @@ class CatalogPolicy(Policy):
         if not re.fullmatch(r"[\d,]+", raw_amount):
             return Action(None, abort="source_did_not_contain_expected_value")
         amount = int(raw_amount.replace(",", ""))
-        pages = [11, 12] if self.period == "第四季度" else [11]
+        pages = self.pages[header_page:len(self.source_text)]
         return Action(
             "finish",
             {
@@ -266,7 +304,7 @@ class CatalogPolicy(Policy):
 
 def judge(spec: RunSpec, records: list[dict[str, Any]], env: AnnualHandoffEnv, end: EpisodeEnd) -> Judgement:
     case, report = env.case, end.report or {}
-    expected_pages = {11, case.desired_page}
+    expected_pages = set(case.required_pages)
     opened_expected = expected_pages.issubset(env.s.source_reads)
     checks = {
         "opened_required_source": opened_expected,
@@ -281,8 +319,10 @@ def judge(spec: RunSpec, records: list[dict[str, Any]], env: AnnualHandoffEnv, e
 
 
 def system_prompt(spec: RunSpec) -> str:
-    return f"""接手宁德时代 2025 年经营现金流净额核查，最多 {spec.horizon} 个工具动作。
-读交接记录，按最后有效的委托查原表，交付一份最终报告。可打开印刷页 11、12。
+    document = source_document(spec.seed)
+    pages = "、".join(map(str, document.pages))
+    return f"""接手{document.issuer} 2025 年经营现金流净额核查，最多 {spec.horizon} 个工具动作。
+读交接记录，按最后有效的委托查原表，交付一份最终报告。可打开印刷页 {pages}。
 期间、金额和单位按原表，引用须覆盖表头和数据行。审阅备注连同“审阅备注：”逐字保留。
 若交接中缺了审阅备注，填空字符串。用 finish 提交，report 是对象。"""
 

@@ -41,11 +41,14 @@ class LLMConfig:
     max_consecutive_errors: int = 3
     no_think: bool = False  # thinking off: reasoning_effort none, plus Qwen3's /no_think text switch
     tool_observation: Literal["escaped", "unicode", "business"] = "escaped"
+    submission: Literal["auto", "fields", "reminder", "task_tools"] = "auto"
 
     def to_dict(self) -> dict[str, Any]:
         settings = asdict(self)
         if self.tool_observation == "escaped":
             settings.pop("tool_observation")  # Existing saved runs and their default setting stay identical.
+        if self.submission == "auto":
+            settings.pop("submission")
         return settings
 
 
@@ -68,9 +71,16 @@ class LLMAgent(Policy):
         self.spec = spec
         self.system = family.system_prompt(spec) + (
             "\nEach tool result is JSON {\"step\": <step the call ran at>, \"result\": ...}.")
+        self.tools = family.toolbox.specs()
+        if self.cfg.submission != "auto" and family.name != "annual_handoff":
+            raise ValueError("submission strategies are scoped to annual_handoff")
+        if self.cfg.submission == "fields":
+            self.system += ("\n查齐资料后，直接调用 finish。把 period、amount_thousand_cny、unit、"
+                            "source_pages 和 reviewer_note 放进同一个 report 对象。只有工具提交会交给审阅人。")
+        elif self.cfg.submission == "task_tools":
+            self.tools = [t for t in self.tools if t["function"]["name"] in {"read_handoff", "open_source", "finish"}]
         if self.cfg.no_think:
             self.system += "\n/no_think"
-        self.tools = family.toolbox.specs()
         headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
         # A local server must never go through the HTTP(S)_PROXY / ALL_PROXY of the environment: a desktop
         # proxy answers requests for localhost with 502 Bad Gateway.
@@ -127,6 +137,9 @@ class LLMAgent(Policy):
         elif st["nudge"] or warn:
             text = f"(now step {obs.step}) "
             text += "You replied without a tool call, so a step passed with no action. " if st["nudge"] else ""
+            if st["nudge"] and self.cfg.submission == "reminder" and not st.get("submission_reminder_sent"):
+                text += "上一步没有调用工具，审阅人还没有收到报告。资料齐了请调用 finish(report=对象)，否则继续取证。 "
+                st["submission_reminder_sent"] = True
             st["messages"].append({"role": "user", "content": text + warn})
         st["nudge"] = False
 
