@@ -48,6 +48,8 @@
 | 换成开发时没用过的公司，公式工具还能跑通吗？ | 先冻结 Dell/Cisco 两张原表及八道题，再做 24 次本地真实推理。在给定摘录的单数值任务中，直接答 1/8，自选原格 3/8，选业务公式和年份 8/8。文档家族数为二。[冻结协议](https://github.com/langju123456/evidenceloop/commit/0772ba8c3c0d38cada2dc2624daf2cf9f5f41afe) · [逐题结果](https://github.com/langju123456/evidenceloop/commit/1c07782a0235f2e3e694cc4a1ed1f89adacf5100) |
 | 断线后收件人手上到底有几份？ | 猜成功与换编号重交都为 2/3，分别会漏交、重交。先查原编号在三个固定情形均通过。EvidenceLoop 已引用产品的四条问答和本仓库的十二条独立回执，保留各自运行身份。[回执对照](decisions/001-report-receipt.md) · [跨仓引用](https://github.com/langju123456/evidenceloop/commit/0a650f7d1de9b21d97c3c3e4ac421c195283ac54) |
 | 交班后能否按最新口径交稿，保住人写的句子？ | 固定两个反向修改案例，比较四种交接记忆。再用相同历史，隔离中文工具返回的表示方式，逐题看能否修好。[交接记忆](decisions/002-handoff-memory.md) · [工具返回](decisions/003-tool-observations.md) |
-| 真实产品已经批准第二版，下游收到的是否就是这一版？ | 直接读取 ForgeFlow 已推送的 Apple 两版原稿。按相同稿件编号核验上游批准链和模拟收件箱，四种办法在五个情形上分别判对 1、2、3、5 个。[固定提交与签收对照](decisions/004-approved-delivery.md) |
+| 真实产品已经批准第二版，下游收到的是否就是这一版？ | ForgeFlow 的 Apple 两版原稿、HorizonBench 的模拟收件、EvidenceLoop 的逐题页已按同一稿件与运行编号关联。四种办法在五个情形上分别判对 1、2、3、5 个。[固定提交与签收对照](decisions/004-approved-delivery.md) · [三仓同稿复盘](https://github.com/langju123456/evidenceloop/blob/c63da97d48afb15e835c2df9eaa98109b96afb85/docs/report-lab/08-apple-delivery.md) |
+
+**从这里进入面试演示。** 先展示审阅人要求“只要增量贡献”后，哪份稿获得批准，以及仅按收件份数会放过哪一版。再打开[真实模型交接](../reports/tool-observations/review.html)，看 Qwen3‑8B 如何查两页原表、交对季度稿，以及反向修改为什么用完步数。下一项工程实验以这个未交付的全年任务为起点。独立分析师试用、扩大发行人样本和权重实验分别记录。
 
 这份清单供下一次打开仓库的人继续使用。认领下一项前先看实际分支上的新实验和进程状态。Anthropic 在长程编码实验中使用功能验收清单、交班文件和可解释的 Git 提交。这里把这种做法落实为可以从原始动作重放的业务交付检查，实际通过数由本项目另测。[官方案例](https://www.anthropic.com/research/effective-harnesses-for-long-running-agents)
