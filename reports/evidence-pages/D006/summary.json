@@ -1,0 +1,19 @@
+{
+  "fields": {
+    "tasks": 4,
+    "strict_pass": 1,
+    "source_pages_correct": 1,
+    "amount_correct": 4,
+    "llm_calls": 25,
+    "model_seconds": 89.359
+  },
+  "evidence": {
+    "tasks": 4,
+    "strict_pass": 1,
+    "source_pages_correct": 1,
+    "amount_correct": 3,
+    "llm_calls": 19,
+    "model_seconds": 73.195
+  },
+  "decision": "reject evidence prompt: no strict gain, one amount regression; reused development documents"
+}

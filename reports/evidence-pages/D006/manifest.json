@@ -1,0 +1,32 @@
+{
+  "batches": [
+    "D006-evidence-catl",
+    "D006-evidence-transfer",
+    "D006-fields-catl",
+    "D006-fields-transfer"
+  ],
+  "runs": 8,
+  "splits": [
+    "dev"
+  ],
+  "eval_salt_sha256": [],
+  "seeds_sha256": "90029771eda9d1e010bf4ef74f0a9d261d7951034d5a6403d3f6f61a1e188d75",
+  "dev_seeds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "eval_seed_count": 0,
+  "policies": [
+    "llm:qwen3:8b+unicode+evidence+handoff_full",
+    "llm:qwen3:8b+unicode+fields+handoff_full"
+  ],
+  "horizons": [
+    12
+  ],
+  "session_len": [
+    12
+  ],
+  "git_commit": "883f4bd3407672be463570032a0e82e5f7c527fb-dirty"
+}

@@ -1,0 +1,6 @@
+{
+  "src/horizon_bench/agents/llm.py": "1e3779acc0d6e68f71e4fec5fea670fab343af32ebacdef15e68901525404e0e",
+  "src/horizon_bench/agents/citation_support.py": "2fbe85f208fe90b123c7f8e460d4c9abcb4fc3e4057e1c1be1f266f70fc3d3d8",
+  "src/horizon_bench/env/annual_handoff.py": "8e35245abf725e9037d55a5220c86e3ccf3474791839f2ab0c18c239a6a11b76",
+  "docs/experiments/007-cell-bound-citations.md": "82d05512c01f0a9cfc6d628ab50efcebd533a96a3425a06b322d5318b19a9391"
+}

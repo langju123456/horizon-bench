@@ -1,0 +1,185 @@
+{
+  "fields": {
+    "strict_pass": 1,
+    "amount_correct": 4,
+    "pages_correct": 1,
+    "llm_calls": 25,
+    "model_seconds": 90.34,
+    "prompt_tokens": 27879,
+    "completion_tokens": 883,
+    "rejected_finish_attempts": 1,
+    "tasks": 4,
+    "cases": [
+      {
+        "seed": 0,
+        "strict_pass": true,
+        "amount_correct": true,
+        "pages_correct": true,
+        "llm_calls": 4,
+        "model_seconds": 20.735579165950185,
+        "rejected_finish_attempts": 0,
+        "prompt_tokens": 3579,
+        "completion_tokens": 139,
+        "model_pages": [
+          11,
+          12
+        ],
+        "submitted_pages": [
+          11,
+          12
+        ]
+      },
+      {
+        "seed": 1,
+        "strict_pass": false,
+        "amount_correct": true,
+        "pages_correct": false,
+        "llm_calls": 6,
+        "model_seconds": 23.168574998999247,
+        "rejected_finish_attempts": 0,
+        "prompt_tokens": 6155,
+        "completion_tokens": 242,
+        "model_pages": [
+          11,
+          12
+        ],
+        "submitted_pages": [
+          11,
+          12
+        ]
+      },
+      {
+        "seed": 2,
+        "strict_pass": false,
+        "amount_correct": true,
+        "pages_correct": false,
+        "llm_calls": 4,
+        "model_seconds": 15.128307291975943,
+        "rejected_finish_attempts": 0,
+        "prompt_tokens": 3527,
+        "completion_tokens": 133,
+        "model_pages": [
+          10,
+          11
+        ],
+        "submitted_pages": [
+          10,
+          11
+        ]
+      },
+      {
+        "seed": 3,
+        "strict_pass": false,
+        "amount_correct": true,
+        "pages_correct": false,
+        "llm_calls": 11,
+        "model_seconds": 31.30767733202083,
+        "rejected_finish_attempts": 1,
+        "prompt_tokens": 14618,
+        "completion_tokens": 369,
+        "model_pages": [
+          10,
+          11
+        ],
+        "submitted_pages": [
+          10,
+          11
+        ]
+      }
+    ]
+  },
+  "grounded": {
+    "strict_pass": 4,
+    "amount_correct": 4,
+    "pages_correct": 4,
+    "llm_calls": 25,
+    "model_seconds": 76.752,
+    "prompt_tokens": 27879,
+    "completion_tokens": 883,
+    "rejected_finish_attempts": 1,
+    "tasks": 4,
+    "cases": [
+      {
+        "seed": 0,
+        "strict_pass": true,
+        "amount_correct": true,
+        "pages_correct": true,
+        "llm_calls": 4,
+        "model_seconds": 12.585828999959631,
+        "rejected_finish_attempts": 0,
+        "prompt_tokens": 3579,
+        "completion_tokens": 139,
+        "model_pages": [
+          11,
+          12
+        ],
+        "submitted_pages": [
+          11,
+          12
+        ]
+      },
+      {
+        "seed": 1,
+        "strict_pass": true,
+        "amount_correct": true,
+        "pages_correct": true,
+        "llm_calls": 6,
+        "model_seconds": 19.346661874995334,
+        "rejected_finish_attempts": 0,
+        "prompt_tokens": 6155,
+        "completion_tokens": 242,
+        "model_pages": [
+          11,
+          12
+        ],
+        "submitted_pages": [
+          11
+        ]
+      },
+      {
+        "seed": 2,
+        "strict_pass": true,
+        "amount_correct": true,
+        "pages_correct": true,
+        "llm_calls": 4,
+        "model_seconds": 12.354541708016768,
+        "rejected_finish_attempts": 0,
+        "prompt_tokens": 3527,
+        "completion_tokens": 133,
+        "model_pages": [
+          10,
+          11
+        ],
+        "submitted_pages": [
+          11
+        ]
+      },
+      {
+        "seed": 3,
+        "strict_pass": true,
+        "amount_correct": true,
+        "pages_correct": true,
+        "llm_calls": 11,
+        "model_seconds": 32.465230916976,
+        "rejected_finish_attempts": 1,
+        "prompt_tokens": 14618,
+        "completion_tokens": 369,
+        "model_pages": [
+          10,
+          11
+        ],
+        "submitted_pages": [
+          10
+        ]
+      }
+    ]
+  },
+  "fixed": [
+    1,
+    2,
+    3
+  ],
+  "regressed": [],
+  "decision": "retain development candidate",
+  "scope": "two reused development documents; deterministic citation binding, not model training or generalization"
+}

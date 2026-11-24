@@ -12,12 +12,14 @@ from horizon_bench.spec import RunSpec
 from horizon_bench.store import Store
 
 SUBMISSIONS = ("auto", "fields", "reminder", "task_tools")
+D006_SUBMISSIONS = ("fields", "evidence")
+D007_SUBMISSIONS = ("fields", "grounded")
 
 
 def check_design(spec: RunSpec, study: str) -> None:
     if (spec.family, spec.policy, spec.tools, spec.split) != ("annual_handoff", "llm", "rich", "dev"):
         raise ValueError(f"unexpected run in {spec.run_id}")
-    seed_offset = 2 if study == "D005" and spec.batch == "D005-transfer" else 0
+    seed_offset = 2 if study in ("D005", "D006", "D007") and spec.batch.endswith("-transfer") else 0
     if spec.horizon != 12 or spec.session_len != 12 or spec.seed != spec.seed_index + seed_offset:
         raise ValueError(f"step budget or seed changed for {spec.run_id}")
     fixed = {"model": "qwen3:8b", "base_url": "http://127.0.0.1:11434/v1", "temperature": 0,
@@ -35,6 +37,15 @@ def arm(spec: RunSpec, study: str) -> str:
     submission = (spec.llm or {}).get("submission", "auto")
     if (study == "D005" and mode == "handoff_full" and view == "unicode" and submission in SUBMISSIONS
             and spec.batch in ("D005-catl", "D005-transfer") and spec.seed_index in (0, 1)):
+        return str(submission)
+    d006_batches = ("D006-fields-catl", "D006-fields-transfer", "D006-evidence-catl", "D006-evidence-transfer")
+    if (study == "D006" and mode == "handoff_full" and view == "unicode" and submission in D006_SUBMISSIONS
+            and spec.batch in d006_batches
+            and spec.seed_index in (0, 1)):
+        return str(submission)
+    if (study == "D007" and mode == "handoff_full" and view == "unicode" and submission in D007_SUBMISSIONS
+            and spec.batch in (f"D007-{submission}-catl", f"D007-{submission}-transfer")
+            and spec.seed_index in (0, 1)):
         return str(submission)
     if submission != "auto":
         raise ValueError(f"unexpected submission strategy for {study}")
@@ -68,8 +79,9 @@ def check(archive: Path, study: str, reports_dir: Path | None = None) -> None:
         if not result["ok"]:
             raise ValueError(f"{path}: {result}")
         print(f"{path.name}: replay OK, original task success={raw['verdict']['success']}")
-    labels = {"D002": MODES, "D003": ("escaped", "unicode", "business"), "D005": SUBMISSIONS}[study]
-    expected = {(label, seed) for label in labels for seed in range(4 if study == "D005" else 2)}
+    labels = {"D002": MODES, "D003": ("escaped", "unicode", "business"), "D005": SUBMISSIONS,
+              "D006": D006_SUBMISSIONS, "D007": D007_SUBMISSIONS}[study]
+    expected = {(label, seed) for label in labels for seed in range(4 if study in ("D005", "D006", "D007") else 2)}
     if seen != expected:
         raise ValueError(f"expected the complete matrix, got {sorted(seen)}")
     if reports_dir is not None:
@@ -89,7 +101,7 @@ def dump(db: Path, archive: Path, batches: list[str], study: str) -> None:
         if study == "D003" and spec.batch == "D002" and spec.variants != ["handoff_full"]:
             continue  # D003 reuses the two full-history baseline episodes already run for D002.
         label = arm(spec, study)
-        if spec.seed not in range(4 if study == "D005" else 2):
+        if spec.seed not in range(4 if study in ("D005", "D006", "D007") else 2):
             raise ValueError(f"unexpected run in {spec.batch}")
         path = archive / f"{label}-dev{spec.seed}.json"
         payload = {"spec": spec.model_dump(), "steps": store.records(spec.run_id), "verdict": verdict}
@@ -110,7 +122,7 @@ if __name__ == "__main__":
     offline.add_argument("archive", type=Path)
     offline.add_argument("--reports-dir", type=Path, help="also write a read-only review of the archived runs")
     for sub in (save, offline):
-        sub.add_argument("--study", choices=["D002", "D003", "D005"], default="D002")
+        sub.add_argument("--study", choices=["D002", "D003", "D005", "D006", "D007"], default="D002")
     args = parser.parse_args()
     if args.action == "dump":
         dump(args.db, args.archive, args.batches, args.study)
