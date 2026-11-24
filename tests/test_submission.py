@@ -37,13 +37,16 @@ def test_submission_strategies_change_only_the_promised_part(arm):
 def test_both_documents_have_distinct_cli_runs_and_independent_citations(tmp_path):
     cli = ["--runs-dir", str(tmp_path)]
     run = [*cli, "run", "--family", "annual_handoff", "--name", "reference", "--horizon", "12"]
-    for doc in ("catl", "transfer"):
+    for doc in ("catl", "transfer", "holdout", "validation"):
         assert main([*run, "--handoff-doc", doc]) == 0
     db = Store(tmp_path / "hb.sqlite")
     runs = db.runs(["reference"])
-    assert len(runs) == 4
+    assert len(runs) == 8
     for spec, verdict in runs:
         assert verdict["success"] and main([*cli, "replay", spec.run_id]) == 0
         final = next(r["args"]["report"] for r in db.records(spec.run_id) if r["tool"] == "finish")
-        pages, amount = [([11, 12], 52559552), ([11], 133219982), ([11], 8712123), ([10], 34092341)][spec.seed]
+        pages, amount = [
+            ([11, 12], 52559552), ([11], 133219982), ([11], 8712123), ([10], 34092341),
+            ([11], 5544220), ([10], 16643908), ([10], 5544220), ([9], 16643908),
+        ][spec.seed]
         assert final["source_pages"] == pages and final["amount_thousand_cny"] == amount

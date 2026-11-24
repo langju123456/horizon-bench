@@ -73,6 +73,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     seeds = seeds_for(args.split, count, salt)
     if args.handoff_doc == "transfer":
         seeds = [seed + 2 for seed in seeds]
+    if args.handoff_doc == "holdout":
+        seeds = [seed + 4 for seed in seeds]
+    if args.handoff_doc == "validation":
+        seeds = [seed + 6 for seed in seeds]
     llm = None
     if "llm" in policies:
         llm = LLMConfig(base_url=args.base_url, model=args.model, max_steps=args.max_steps,
@@ -272,8 +276,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--split", choices=["dev", "eval"], default="dev")
     r.add_argument("--name", default="default", help="batch name, used by `hb report`")
     r.add_argument("--family", choices=["reactor", "annual_handoff"], default="reactor")
-    r.add_argument("--handoff-doc", choices=["catl", "transfer"], default="catl",
-                   help="choose the original CATL cases or the second public document's cases")
+    r.add_argument("--handoff-doc", choices=["catl", "transfer", "holdout", "validation"], default="catl",
+                   help="choose CATL, the second public document, the archived invalid D008 case, or D009 validation")
     r.add_argument("--submission", choices=["auto", "fields", "evidence", "grounded", "reminder", "task_tools"],
                    default="auto",
                    help="annual handoff only: compare how the model sees or is reminded of the final submission")

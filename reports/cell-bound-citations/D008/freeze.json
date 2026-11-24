@@ -1,0 +1,8 @@
+{
+  "src/horizon_bench/agents/llm.py": "1e3779acc0d6e68f71e4fec5fea670fab343af32ebacdef15e68901525404e0e",
+  "src/horizon_bench/agents/citation_support.py": "2fbe85f208fe90b123c7f8e460d4c9abcb4fc3e4057e1c1be1f266f70fc3d3d8",
+  "src/horizon_bench/env/annual_handoff.py": "b50571504a793f8b481a2a5f16220596fb66271446b2f7fa37ce8b697f683d65",
+  "scripts/handoff_archive.py": "c77b834da18d2bd145f5165298d375c12fea4bc8eb2494d050e2f5674d303cd8",
+  "docs/experiments/008-holdout-cell-bound-citations.md": "7ce20ab1633175839265f8ef4ba54fe64c0753085dce441e13d7ea034e9c8db0",
+  "source_pdf_sha256": "a50f3e7f150954b2b45c44c50afdaa618c4184ebe4bb1e9b3a2b6475267c66d8"
+}

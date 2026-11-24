@@ -45,8 +45,39 @@ CHALCO = SourceDocument("中国铝业", "https://static.cninfo.com.cn/finalpage/
          "经营活动产生的现金流量净额 | 6,259,774 | 8,004,971 | 11,115,473 | 8,712,123"),
 })
 
+# D008 was frozen after D007.  It deliberately uses a separate issuer and the
+# same compact pipe-table representation as the public development documents;
+# this evaluates citation binding, not PDF extraction.
+# Kept solely so the already-run D008 traces replay exactly.  Its page labels
+# were frozen incorrectly (PDF page index mistaken for printed pages), so it
+# is not a valid benchmark document.  D009 below corrects the same source.
+CONCH_D008_INVALID = SourceDocument(
+    "安徽海螺水泥（D008 页码错误封存）",
+    "https://static.cninfo.com.cn/finalpage/2026-03-25/1225028852.PDF",
+    {
+    10: ("印刷页 10（PDF 页序 8，零起算），单位：千元。主要会计数据（摘列）。\n"
+        "指标 | 2025 年全年 | 2024 年全年 | 本年比上年增减（%） | 2023 年全年\n"
+        "经营活动产生的现金流量净额 | 16,643,908 | 18,476,253 | -9.92 | 20,074,156"),
+    11: ("印刷页 11（PDF 页序 9，零起算），2025 年分季度主要财务数据。单位：千元。\n"
+        "指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度\n"
+        "经营活动产生的现金流量净额 | 502,574 | 7,783,970 | 2,813,144 | 5,544,220"),
+})
+
+CONCH_D009 = SourceDocument("安徽海螺水泥", "https://static.cninfo.com.cn/finalpage/2026-03-25/1225028852.PDF", {
+    9: ("印刷页 9（PDF 页序 8，零起算），单位：千元。主要会计数据（摘列）。\n"
+        "指标 | 2025 年全年 | 2024 年全年 | 本年比上年增减（%） | 2023 年全年\n"
+        "经营活动产生的现金流量净额 | 16,643,908 | 18,476,253 | -9.92 | 20,074,156"),
+    10: ("印刷页 10（PDF 页序 9，零起算），2025 年分季度主要财务数据。单位：千元。\n"
+         "指标 | 第一季度 | 第二季度 | 第三季度 | 第四季度\n"
+         "经营活动产生的现金流量净额 | 502,574 | 7,783,970 | 2,813,144 | 5,544,220"),
+})
+
 
 def source_document(seed: int) -> SourceDocument:
+    if seed in (4, 5):
+        return CONCH_D008_INVALID
+    if seed in (6, 7):
+        return CONCH_D009
     return CHALCO if seed in (2, 3) else CATL
 
 
@@ -110,6 +141,40 @@ TRANSFER_CASES = (
     )),
 )
 
+HOLDOUT_CASES = (
+    Case("conch-annual-to-q4", "第四季度", 5544220, (11,), "审阅备注：按千元列示，不四舍五入。", (
+        {"type": "context", "text": "客户：安徽海螺水泥。指标：2025 年经营活动产生的现金流量净额。"},
+        {"type": "request", "text": "最初要在会上汇报全年情况。"},
+        {"type": "review_note", "text": "审阅备注：按千元列示，不四舍五入。"},
+        {"type": "draft", "text": "旧稿仍列全年口径，尚未核验。"},
+        {"type": "revision", "text": "会议缩小了范围，改成第四季度。"},
+    )),
+    Case("conch-q4-to-annual", "全年", 16643908, (10,), "审阅备注：请沿用披露精度。", (
+        {"type": "context", "text": "客户：安徽海螺水泥。指标：2025 年经营活动产生的现金流量净额。"},
+        {"type": "review_note", "text": "审阅备注：请沿用披露精度。"},
+        {"type": "request", "text": "初稿先整理第四季度的数。"},
+        {"type": "draft", "text": "交班前尚未完成对照。"},
+        {"type": "revision", "text": "会上要看整年情况，改成全年。"},
+    )),
+)
+
+D009_CASES = (
+    Case("conch-d009-annual-to-q4", "第四季度", 5544220, (10,), "审阅备注：按千元列示，不四舍五入。", (
+        {"type": "context", "text": "客户：安徽海螺水泥。指标：2025 年经营活动产生的现金流量净额。"},
+        {"type": "request", "text": "最初要在会上汇报全年情况。"},
+        {"type": "review_note", "text": "审阅备注：按千元列示，不四舍五入。"},
+        {"type": "draft", "text": "旧稿仍列全年口径，尚未核验。"},
+        {"type": "revision", "text": "会议缩小了范围，改成第四季度。"},
+    )),
+    Case("conch-d009-q4-to-annual", "全年", 16643908, (9,), "审阅备注：请沿用披露精度。", (
+        {"type": "context", "text": "客户：安徽海螺水泥。指标：2025 年经营活动产生的现金流量净额。"},
+        {"type": "review_note", "text": "审阅备注：请沿用披露精度。"},
+        {"type": "request", "text": "初稿先整理第四季度的数。"},
+        {"type": "draft", "text": "交班前尚未完成对照。"},
+        {"type": "revision", "text": "会上要看整年情况，改成全年。"},
+    )),
+)
+
 
 @dataclass
 class HandoffState:
@@ -123,7 +188,14 @@ class AnnualHandoffEnv:
     def __init__(self, seed: int, horizon: int) -> None:
         self.seed, self.horizon = seed, horizon
         self.document = source_document(seed)
-        self.case = TRANSFER_CASES[seed - 2] if self.document is CHALCO else CASES[seed % len(CASES)]
+        if self.document is CONCH_D008_INVALID:
+            self.case = HOLDOUT_CASES[seed - 4]
+        elif self.document is CONCH_D009:
+            self.case = D009_CASES[seed - 6]
+        elif self.document is CHALCO:
+            self.case = TRANSFER_CASES[seed - 2]
+        else:
+            self.case = CASES[seed % len(CASES)]
         self.s = HandoffState()
 
     @property

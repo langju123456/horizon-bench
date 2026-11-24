@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
+
 import pytest
 
 from horizon_bench.agents.base import Action, Observation, Policy
-from horizon_bench.env.annual_handoff import ANNUAL_HANDOFF, AnnualHandoffEnv, AnnualHandoffToolBox
+from horizon_bench.env.annual_handoff import ANNUAL_HANDOFF, CONCH_D009, AnnualHandoffEnv, AnnualHandoffToolBox
 from horizon_bench.runner import Runner, SimulatedCrash, replay
 from horizon_bench.spec import RunSpec
 from horizon_bench.store import Store
@@ -20,6 +24,10 @@ from horizon_bench.store import Store
         (1, "handoff_recent3", False),
         (1, "handoff_full", True),
         (1, "handoff_card", True),
+        (4, "handoff_full", True),
+        (5, "handoff_full", True),
+        (6, "handoff_full", True),
+        (7, "handoff_full", True),
     ],
 )
 def test_catalog_reference_replays_for_each_handoff_mode(seed: int, mode: str, success: bool) -> None:
@@ -134,3 +142,26 @@ def test_type_card_is_compiled_from_visible_event_types() -> None:
     card = env.handoff("handoff_card")
     assert "更新范围：不要全年数，改成第四季度。" in card
     assert "审阅备注：按千元列示，不四舍五入。" in card
+
+
+def test_d009_validation_uses_pdf_printed_pages_not_zero_based_pdf_indices() -> None:
+    assert set(CONCH_D009.pages) == {9, 10}
+    annual = AnnualHandoffEnv(7, 4)
+    quarter = AnnualHandoffEnv(6, 4)
+    assert annual.case.desired_amount == 16643908
+    assert annual.case.required_pages == (9,)
+    assert quarter.case.desired_amount == 5544220
+    assert quarter.case.required_pages == (10,)
+
+
+def test_d009_source_evidence_matches_the_corrected_environment() -> None:
+    root = Path(__file__).resolve().parents[1]
+    evidence = json.loads((root / "reports/cell-bound-citations/D009/source/evidence.json").read_text())
+    assert [(row["printed_page"], row["amount_thousand_cny"]) for row in evidence["pages"]] == [
+        (9, 16643908), (10, 5544220),
+    ]
+    for row in evidence["pages"]:
+        asset = root / "reports/cell-bound-citations/D009/source" / row["asset"]
+        assert hashlib.sha256(asset.read_bytes()).hexdigest() == row["sha256"]
+    assert CONCH_D009.pages[9].endswith("20,074,156")
+    assert CONCH_D009.pages[10].endswith("5,544,220")

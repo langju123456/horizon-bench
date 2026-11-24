@@ -1,0 +1,11 @@
+{
+  "src/horizon_bench/agents/llm.py": "1e3779acc0d6e68f71e4fec5fea670fab343af32ebacdef15e68901525404e0e",
+  "src/horizon_bench/agents/citation_support.py": "2fbe85f208fe90b123c7f8e460d4c9abcb4fc3e4057e1c1be1f266f70fc3d3d8",
+  "src/horizon_bench/env/annual_handoff.py": "10050de7b8e262397423c558a851f46a651a0a54c2e18a5df747efc437feaa62",
+  "scripts/handoff_archive.py": "ec57a35b57809a1e23dd0700f2cdcd92bc11c7299a727a2349d19dd37d74af80",
+  "docs/experiments/009-source-page-validated-citations.md": "a469dec090386a3986c56616cb4039e6b736a6139de08474f1bd8063fa748ec8",
+  "reports/cell-bound-citations/D009/source/evidence.json": "e5c1c60daff655161713e17a97e13549d82e1bdf64168cc9220ae8672eac4911",
+  "reports/cell-bound-citations/D009/source/pdf-index-8-printed-9.png": "b8878465fc7b6657075bdb0fb154c151d55fc8596ed11aee3693076869478f6d",
+  "reports/cell-bound-citations/D009/source/pdf-index-9-printed-10.png": "994b51009aec75ad1ffa68e4b56053bb7546baaf79121fc6cd5a0de7a7849fbe",
+  "source_pdf_sha256": "a50f3e7f150954b2b45c44c50afdaa618c4184ebe4bb1e9b3a2b6475267c66d8"
+}

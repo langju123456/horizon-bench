@@ -1,0 +1,8 @@
+{
+  "source_url": "https://static.cninfo.com.cn/finalpage/2026-03-25/1225028852.PDF",
+  "source_pdf_sha256": "a50f3e7f150954b2b45c44c50afdaa618c4184ebe4bb1e9b3a2b6475267c66d8",
+  "pages": [
+    {"pdf_index_zero_based": 8, "printed_page": 9, "asset": "pdf-index-8-printed-9.png", "sha256": "b8878465fc7b6657075bdb0fb154c151d55fc8596ed11aee3693076869478f6d", "unit": "千元", "column": "2025 年全年", "row": "经营活动产生的现金流量净额", "amount_thousand_cny": 16643908},
+    {"pdf_index_zero_based": 9, "printed_page": 10, "asset": "pdf-index-9-printed-10.png", "sha256": "994b51009aec75ad1ffa68e4b56053bb7546baaf79121fc6cd5a0de7a7849fbe", "unit": "千元", "column": "第四季度", "row": "经营活动产生的现金流量净额", "amount_thousand_cny": 5544220}
+  ]
+}
