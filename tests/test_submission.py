@@ -11,7 +11,7 @@ from horizon_bench.spec import RunSpec
 from horizon_bench.store import Store
 
 
-@pytest.mark.parametrize("arm", ["auto", "fields", "reminder", "task_tools"])
+@pytest.mark.parametrize("arm", ["auto", "fields", "evidence", "grounded", "reminder", "task_tools"])
 def test_submission_strategies_change_only_the_promised_part(arm):
     cfg = LLMConfig(model="test", submission=arm)
     spec = RunSpec(run_id="test", batch="tests", policy="llm", tools="rich", horizon=12, session_len=12,
@@ -22,7 +22,8 @@ def test_submission_strategies_change_only_the_promised_part(arm):
     names = {tool["function"]["name"] for tool in agent.tools}
     assert names == ({"read_handoff", "open_source", "finish"} if arm == "task_tools"
                      else set(ANNUAL_HANDOFF.toolbox.names()))
-    assert ("amount_thousand_cny" in agent.system) == (arm == "fields")
+    assert ("amount_thousand_cny" in agent.system) == (arm in ("fields", "evidence", "grounded"))
+    assert ("source_pages 是支撑最终数值的证据页" in agent.system) == (arm == "evidence")
     assert "34,092,341" not in agent.system and "保留人民币原单位" not in agent.system
     assert ("submission" in cfg.to_dict()) == (arm != "auto")
     for step in (1, 2):

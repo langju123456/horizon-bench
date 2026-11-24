@@ -274,7 +274,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--family", choices=["reactor", "annual_handoff"], default="reactor")
     r.add_argument("--handoff-doc", choices=["catl", "transfer"], default="catl",
                    help="choose the original CATL cases or the second public document's cases")
-    r.add_argument("--submission", choices=["auto", "fields", "reminder", "task_tools"], default="auto",
+    r.add_argument("--submission", choices=["auto", "fields", "evidence", "grounded", "reminder", "task_tools"],
+                   default="auto",
                    help="annual handoff only: compare how the model sees or is reminded of the final submission")
     r.add_argument("--session-len", type=int, default=40)
     r.add_argument("--variant", default="",

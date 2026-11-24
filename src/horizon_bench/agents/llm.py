@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from horizon_bench.agents.base import AUTO_SUMMARY_NOTE, Action, Observation, Policy
+from horizon_bench.agents.citation_support import bind_support
 from horizon_bench.family import Family
 from horizon_bench.spec import RunSpec
 
@@ -41,7 +42,7 @@ class LLMConfig:
     max_consecutive_errors: int = 3
     no_think: bool = False  # thinking off: reasoning_effort none, plus Qwen3's /no_think text switch
     tool_observation: Literal["escaped", "unicode", "business"] = "escaped"
-    submission: Literal["auto", "fields", "reminder", "task_tools"] = "auto"
+    submission: Literal["auto", "fields", "evidence", "grounded", "reminder", "task_tools"] = "auto"
 
     def to_dict(self) -> dict[str, Any]:
         settings = asdict(self)
@@ -74,9 +75,13 @@ class LLMAgent(Policy):
         self.tools = family.toolbox.specs()
         if self.cfg.submission != "auto" and family.name != "annual_handoff":
             raise ValueError("submission strategies are scoped to annual_handoff")
-        if self.cfg.submission == "fields":
+        if self.cfg.submission in ("fields", "evidence", "grounded"):
             self.system += ("\n查齐资料后，直接调用 finish。把 period、amount_thousand_cny、unit、"
                             "source_pages 和 reviewer_note 放进同一个 report 对象。只有工具提交会交给审阅人。")
+        if self.cfg.submission == "evidence":
+            self.system += (" source_pages 是支撑最终数值的证据页，不是已读页面清单。"
+                            "不要仅因打开过某页就引用它；只列直接建立所选数据格、其表头或单位所必需的页。"
+                            "表头和数据行跨页时才同时列两页。")
         elif self.cfg.submission == "task_tools":
             self.tools = [t for t in self.tools if t["function"]["name"] in {"read_handoff", "open_source", "finish"}]
         if self.cfg.no_think:
@@ -126,6 +131,10 @@ class LLMAgent(Policy):
         pending, st["pending"] = st["pending"], None
         if pending and pending.get("id"):
             payload = obs.result
+            if self.cfg.submission == "grounded" and pending["name"] == "open_source" and isinstance(payload, dict):
+                value = payload.get("value", payload)
+                if isinstance(value, dict) and value.get("ok") is True and isinstance(value.get("text"), str):
+                    st.setdefault("observed_source_pages", {})[str(value["page"])] = copy.deepcopy(value)
             if self.cfg.tool_observation == "business" and self.spec.tools == "rich" and isinstance(payload, dict):
                 envelope = {"value", "ok", "error", "confidence", "age_steps", "latency_ms"}
                 if payload.keys() == envelope and payload["ok"] is True and payload["error"] is None:
@@ -144,6 +153,16 @@ class LLMAgent(Policy):
         st["nudge"] = False
 
     def _emit(self, call: dict[str, Any], meta: dict[str, Any]) -> Action:
+        if self.cfg.submission == "grounded" and call["tool"] == "finish" and not call["error"]:
+            report = call["args"].get("report") if isinstance(call["args"], dict) else None
+            year = re.search(r"(\d{4}) 年", self.system)
+            support = (bind_support(self.st.get("observed_source_pages", {}), report, year.group(1))
+                       if isinstance(report, dict) and year else None)
+            if support is not None:
+                original_pages = copy.deepcopy(report.get("source_pages"))
+                call = {**call, "args": {**call["args"], "report": {**report, "source_pages": support["pages"]}}}
+                meta = {**meta, "note": json.dumps({"citation_binding": support,
+                        "model_source_pages": original_pages}, ensure_ascii=False)}
         self.st["actions"] += 1
         self.st["pending"] = {"id": call["id"], "name": call["tool"]}
         return Action(call["tool"], call["args"], error=call["error"], call_id=call["id"], meta=meta)
