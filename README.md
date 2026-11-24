@@ -1,5 +1,14 @@
 # horizon-bench
 
+## 当前年报可靠性验证（2026-11-24）
+
+D007在两份开发文档的四题上，严格引用通过由1/4到4/4；D009在核对原始PDF页图后的海螺水泥两题上由0/2到2/2，四条真实模型轨迹均可离线重放。D008因页码金标错误作废，记录仍保留。D009是确认性复验，不能称盲留出或通用PDF解析。
+
+[三项目分工与架构](docs/portfolio-contract.zh.md) · [D007结果](docs/experiments/007-cell-bound-citations-results.md) · [D009协议与结果](docs/experiments/009-source-page-validated-citations-results.md) · [D008作废原因](docs/experiments/008-invalidated-source-page.md)
+
+下方保留早期年报交接与工业反应器实验，样本和分母各自独立。
+
+
 [三个项目做什么、怎样验收和接着做](docs/portfolio-contract.zh.md)
 
 ## 年报交接任务

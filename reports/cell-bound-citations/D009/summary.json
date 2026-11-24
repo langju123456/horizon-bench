@@ -1,0 +1,58 @@
+{
+  "study": "D009",
+  "rows": [
+    {
+      "file": "fields-dev6.json",
+      "seed": 6,
+      "arm": "fields",
+      "success": false,
+      "failed": [
+        "correct_source_pages"
+      ],
+      "model_calls": 4,
+      "prompt_tokens": 3568,
+      "completion_tokens": 136
+    },
+    {
+      "file": "fields-dev7.json",
+      "seed": 7,
+      "arm": "fields",
+      "success": false,
+      "failed": [
+        "correct_source_pages"
+      ],
+      "model_calls": 9,
+      "prompt_tokens": 11019,
+      "completion_tokens": 277
+    },
+    {
+      "file": "grounded-dev6.json",
+      "seed": 6,
+      "arm": "grounded",
+      "success": true,
+      "failed": [],
+      "model_calls": 4,
+      "prompt_tokens": 3568,
+      "completion_tokens": 136
+    },
+    {
+      "file": "grounded-dev7.json",
+      "seed": 7,
+      "arm": "grounded",
+      "success": true,
+      "failed": [],
+      "model_calls": 9,
+      "prompt_tokens": 11019,
+      "completion_tokens": 277
+    }
+  ],
+  "strict_pass": {
+    "fields": 0,
+    "grounded": 2
+  },
+  "denominator_per_arm": 2,
+  "replays": 4,
+  "blind_holdout": false,
+  "candidate_unchanged": true,
+  "scope": "corrected source-page confirmation on pipe-table excerpts; not general PDF parsing"
+}
